@@ -1,6 +1,6 @@
 import * as sqlite3 from 'sqlite3';
 
-function createConnection(): sqlite3.Database {
+export function createConnection(): sqlite3.Database {
     const db = new sqlite3.Database('atharvaisanidiot.db', (err) => {
         if(err) {
             console.error('Could not open database', err);
@@ -11,7 +11,7 @@ function createConnection(): sqlite3.Database {
     return db
 }
 
-function createTable(db: sqlite3.Database): void {
+export function createTable(db: sqlite3.Database): void {
     db.serialize(() => {
         db.run(`
             CREATE TABLE IF NOT EXISTS package_scores (
@@ -30,7 +30,7 @@ function createTable(db: sqlite3.Database): void {
     });
 }
 
-function addEntry(db: sqlite3.Database, url: string, information?: string, metrics?: string): void {
+export function addEntry(db: sqlite3.Database, url: string, information?: string, metrics?: string): void {
     const sql = `INSERT INTO package_scores (url, information, metrics) VALUES(?, ?, ?)`;
 
     db.run(sql, [url, information || null, metrics || null], (err) => {
@@ -42,7 +42,7 @@ function addEntry(db: sqlite3.Database, url: string, information?: string, metri
     });
 }
 
-function updateEntry(db: sqlite3.Database, url: string, information?: string, metrics?: string): void {
+export function updateEntry(db: sqlite3.Database, url: string, information?: string, metrics?: string): void {
     const sql = `UPDATE package_scores SET information = COALESCE(?, information), metrics = COALESCE(?, metrics) WHERE url = ?`;
 
     db.run(sql, [information || null, metrics || null, url], (err) => {
@@ -54,7 +54,7 @@ function updateEntry(db: sqlite3.Database, url: string, information?: string, me
     });
 }
 
-function closeConnection(db: sqlite3.Database): void {
+export function closeConnection(db: sqlite3.Database): void {
     db.close((err) => {
         if (err) {
             console.error('Could not close the database connection', err);
