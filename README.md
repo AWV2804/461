@@ -19,6 +19,28 @@ Andrew Tu
         - For Andrew: `updateEntry(db, url, <information>, undefined);`
     - Closing connection
         - Do this at the end of your main function in order to properly disconnect from the database
+
+# Metric Calculations:
+- Bus Factor:
+    - 1 - (commits by top 3 contributors) / total number of commits in the last year
+- Correctness:
+    - 1:
+    - 
+- Ramp Up: 
+    - 
+- Responsiveness: 
+    - Sum of ticket weights divided by total tickets in the past year:
+        - 1: ticket closed within 3 days
+        - 0.7: ticket closed within 3-7 days
+        - 0.4: ticket closed within 7-14 days
+        - 0.1: ticket closed within 14-31 days
+        - 0: else
+- License:
+    - 1: Compatible 
+    - 0: Incompatible
+
 ### Other Info
 - `sqlite3 atharvaisanidiot.db` in the command line will let you type commands from the command line to see things in the database. Use this as a quick way to test if stuff is working
 - Add any functions you want for selecting specific information, or just do it in your own code. s
+
+
