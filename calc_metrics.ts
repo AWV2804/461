@@ -26,9 +26,9 @@ export class Metrics {
         this._info = new Map<string, Map<string, number>>();
     }
 
-    private _callback(err: Error | null, row: RowInfo): void {
+    private _calc_callback(err: Error | null, row: RowInfo): void {
         /**
-         * Callback function for the populateMetrics method to process the row data fetched from the database.
+         * Callback method to process the row data fetched from the database.
          * Map URLs to their respective information in order to calculate metrics later. 
          * Fetches all information in the database at once.
          * If there was an error retreiving the data, log the error and set information for URL as -1.
@@ -227,7 +227,7 @@ export class Metrics {
          * Outputs:
          * - None
          */
-        await this._db.each<RowInfo>(`SELECT * FROM package_scores`, this._callback.bind(this));
+        await this._db.each<RowInfo>(`SELECT * FROM package_scores`, this._calc_callback.bind(this));
         this._calculateMetrics(); // calculate the metrics
 
     }
