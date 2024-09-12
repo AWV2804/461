@@ -11,5 +11,15 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^22.5.4",
+    "commander": "^12.1.0",
+    "sqlite3": "^5.1.7",
+    "typescript": "^5.6.2"
+  },
+  "devDependencies": {
+    "@types/commander": "^2.12.2",
+    "@types/sqlite3": "^3.1.11"
+  }
 }
