@@ -1,4 +1,5 @@
 import * as database from './database';
+import * as sqlite3 from 'sqlite3';
 
 interface RowInfo {
     /**
@@ -12,12 +13,12 @@ interface RowInfo {
     metrics: string | null
 }
 
-class Metrics {
-    private _db: database.Database;
+export class Metrics {
+    private _db: sqlite3.Database;
     private _info: Map<string, Map<string, number>>; // URL -> Information
     done: boolean = false;
 
-    constructor(db: database.Database) {
+    constructor(db: sqlite3.Database) {
         /**
          * Creates a Metrics class instance and opens a database connection. 
          */
@@ -207,7 +208,7 @@ class Metrics {
                 const license = value.get('license');
                 const net = this._netScore(bus, correct, ramp, response, license ? license : 0);
                 metrics.set('netScore', net);
-                this._db.updateMetrics(this._db, key, undefined, JSON.stringify(Object.fromEntries(metrics)));
+                database.updateEntry(this._db, key, undefined, JSON.stringify(Object.fromEntries(metrics)));
 
             } else {
                 console.error('Error calculating metrics for ${key}: information not found');
@@ -216,7 +217,7 @@ class Metrics {
         this.done = true;
     }
 
-    async calc(): Promise<void> {
+    public async calc(): Promise<void> {
         /**
          * Wrapper function to calculate the metrics for all packages.
          * 
