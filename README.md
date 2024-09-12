@@ -32,7 +32,7 @@ Andrew Tu
     - 0.3: 1k-50k downloads
     - 0: < 1k downloads
 - Responsiveness:
-    - Sum of issues weights divided by total issues in the past year
+    - Sum of issues weights divided by total issues in the past six months
     - Weights:
         - 1: issues closed within 3 days
         - 0.7: issues closed within 3-7 days
