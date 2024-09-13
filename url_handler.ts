@@ -1,5 +1,6 @@
 import axios from 'axios';
 import 'dotenv/config';
+import { get } from 'http';
 
 
 const token: string = process.env.GITHUB_TOKEN || "";
@@ -223,15 +224,130 @@ async function getLicenseInfo(owner: string, repo: string) {
     }
 }
 
-// export async function getLicense(owner: string, repo: string, apiKey: string) {
-//     const url = `${baseURL}/repos/${owner}/${repo}/license`;
-//     try {
-//         const response = await baseGet(url, apiKey);
-//         console.log(response.data);
-//     } catch (error) {
-//         console.error(error);
-//     }
-// }
+interface OwnerRepo {
+  owner: string;
+  repo: string;
+}
+
+export async function getOwnerAndRepo(url: string): Promise<OwnerRepo> {
+  if (isGitHubUrl(url)) {
+      // GitHub URL: Extract owner and repo
+      const ownerRepo = extractOwnerRepoFromGitHubUrl(url);
+      if (ownerRepo) {
+          return ownerRepo;
+      } else {
+          throw new Error('Invalid GitHub URL format.');
+      }
+  } else if (isNpmUrl(url)) {
+      // npmjs.com URL: Extract package name and get GitHub repo
+      const packageName = extractPackageNameFromNpmUrl(url);
+      if (!packageName) {
+          throw new Error('Invalid npm package URL.');
+      }
+      const repoUrl = await getRepositoryUrlFromNpm(packageName);
+      if (repoUrl && isGitHubUrl(repoUrl)) {
+          const ownerRepo = extractOwnerRepoFromGitHubUrl(repoUrl);
+          if (ownerRepo) {
+              return ownerRepo;
+          } else {
+              throw new Error('Invalid GitHub repository URL in npm package.');
+          }
+      } else {
+          throw new Error('GitHub repository not found for this npm package.');
+      }
+  } else {
+      throw new Error('URL must be a GitHub or npm package URL.');
+  }
+}
+
+function isGitHubUrl(url: string): boolean {
+  // Checks if the URL is a GitHub repository URL
+  return /^https?:\/\/(www\.)?github\.com\/[^\/]+\/[^\/]+/i.test(url);
+}
+
+function isNpmUrl(url: string): boolean {
+  // Checks if the URL is an npm package URL
+  return /^https?:\/\/(www\.)?npmjs\.com\/package\/(@?[^\/]+)/i.test(url);
+}
+
+function extractOwnerRepoFromGitHubUrl(url: string): OwnerRepo | null {
+  // Extracts the owner and repo from a GitHub URL
+  const regex = /^https?:\/\/(www\.)?github\.com\/([^\/]+)\/([^\/]+)(\/|$)/i;
+  const match = url.match(regex);
+  if (match && match[2] && match[3]) {
+      return { owner: match[2], repo: match[3] };
+  }
+  return null;
+}
+
+function extractPackageNameFromNpmUrl(url: string): string | null {
+  // Extracts the package name from an npm package URL
+  const regex = /^https?:\/\/(www\.)?npmjs\.com\/package\/(@?[^\/]+)/i;
+  const match = url.match(regex);
+  if (match && match[2]) {
+      return decodeURIComponent(match[2]);
+  }
+  return null;
+}
+
+async function getRepositoryUrlFromNpm(packageName: string): Promise<string | null> {
+  // Fetches the repository URL from the npm registry
+  const registryUrl = `https://registry.npmjs.org/${packageName}`;
+  try {
+      const response = await axios.get(registryUrl);
+      const data = response.data;
+
+      // First, check if 'repository' exists at the top level
+      let repoUrl: string | null = extractRepositoryUrl(data.repository);
+      if (repoUrl) {
+          repoUrl = normalizeRepoUrl(repoUrl);
+          return repoUrl;
+      }
+
+      // If not, look for the 'latest' version and check its 'repository' field
+      const latestVersionNumber = data['dist-tags']?.latest;
+      if (latestVersionNumber && data.versions && data.versions[latestVersionNumber]) {
+          const latestVersionData = data.versions[latestVersionNumber];
+          repoUrl = extractRepositoryUrl(latestVersionData.repository);
+          if (repoUrl) {
+              repoUrl = normalizeRepoUrl(repoUrl);
+              return repoUrl;
+          }
+      }
+
+      // Repository URL not found
+      return null;
+  } catch (error) {
+      throw new Error(`Error fetching npm package data: ${error.message}`);
+  }
+}
+
+function extractRepositoryUrl(repository: any): string | null {
+  // Extracts the repository URL from the 'repository' field
+  if (repository) {
+      if (typeof repository === 'string') {
+          return repository;
+      } else if (typeof repository.url === 'string') {
+          return repository.url;
+      }
+  }
+  return null;
+}
+
+function normalizeRepoUrl(url: string): string {
+  // Normalizes the repository URL
+  url = url.replace(/^git\+/, '').replace(/\.git$/, '');
+
+  if (url.startsWith('git@')) {
+      url = url.replace('git@', 'https://').replace(':', '/');
+  }
+
+  if (url.startsWith('git://')) {
+      url = url.replace('git://', 'https://');
+  }
+
+  return url;
+}
 
 // Function to fetch all metrics
 async function getRepoMetrics(owner: string, repo: string) {
@@ -257,10 +373,19 @@ async function getRepoMetrics(owner: string, repo: string) {
 // const owner = 'expressjs'
 // const repo = 'express'
 
-const owner = 'caolan';
-const repo = 'async';  // async library
+// const owner = 'caolan';
+// const repo = 'async';  // async library
 
-getRepoMetrics(owner, repo);
+import { main } from 'module';
+
+main();
+
+async function main() {
+  //can use any url
+    const { owner, repo } = await getOwnerAndRepo('https://www.npmjs.com/package/async');
+    getRepoMetrics(owner, repo);
+}
+
 
 
 // export async function getTotalCommits(owner: string, repo: string, apiKey: string) {
