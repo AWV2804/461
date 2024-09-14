@@ -2,7 +2,7 @@ import { EventEmitter } from 'stream';
 import * as database from './database';
 import Database from 'better-sqlite3';
 
-interface RowInfo {
+export interface RowInfo {
     /**
      * Interface for the rows fetched from the database.
      * Only used to parse the data from the database and put it into correct data structures
