@@ -1,8 +1,12 @@
 import { Manager } from './manager'
 import { exec } from 'child_process'
+import { Metrics } from './calc_metrics'
+import * as database from './database'
+import { Controller } from './controller'
+import fs from 'fs'
 
 function runNpmInstall(): void {
-    exec('npm install sqlite3 commander', (error, stdout, stderr) => {
+    exec('npm install better-sqlite3 commander', (error, stdout, stderr) => {
         if(error) {
             console.error(`Error during npm install: ${error.message}`)
             return;
@@ -13,7 +17,7 @@ function runNpmInstall(): void {
 
         console.log(`npm install output: ${stdout}`);
     })
-    exec('npm install --save-dev @types/sqlite3 @types/commander', (error, stdout, stderr) => {
+    exec('npm install --save-dev @types/better-sqlite3 @types/commander', (error, stdout, stderr) => {
         if(error) {
             console.error(`Error during npm install: ${error.message}`)
             return;
@@ -27,18 +31,32 @@ function runNpmInstall(): void {
 }
 
 const manager = new Manager();
-
-manager.registerCommand('install', 'Install dependencies', () => {
-    runNpmInstall();
-});
-
 manager.registerCommand('process', 'Process a file of URLs for scoring', (args) => {
-    const file = args.file;
-    if(file) {
-        console.log(`Processing file: ${file}`);
+    if (args.file) {
+        const filePath = args.file;
+        const data = fs.readFileSync(filePath, 'utf8');
+
+        const lines = data.split('\n');
+        const db = database.createConnection();
+        const metric_calc = new Metrics(db);
+        const controller = new Controller(manager, metric_calc);
+        database.createTable(db);
+        lines.forEach((line: string, index: number) => {
+            // console.log(line);
+            database.addEntry(db, line);
+            manager.emit('startProcessing', index+1)
+
+        });
+        
+        // metric_calc.calc();
+        database.closeConnection(db);
+        
     } else {
-        console.log(`No file provided for processing.`);
+        console.error('No file specified.');
+        process.exit(1);
     }
+    
+    
 });
 
 manager.registerCommand('test', 'Test suite', () => {

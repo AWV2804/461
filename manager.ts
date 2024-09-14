@@ -1,3 +1,4 @@
+import { EventEmitter } from 'stream';
 import * as database from './database'
 import { Command } from 'commander'
 interface CommandAction {
@@ -5,10 +6,11 @@ interface CommandAction {
     action: (args: string[]) => void;
 }
 
-export class Manager {
+export class Manager extends EventEmitter {
     private program: Command;
     private commands: {[key: string]: CommandAction}
     constructor() {
+        super();
         this.commands = {};
         this.program = new Command();
         this.program
@@ -51,4 +53,5 @@ export class Manager {
     execute(args: string[]): void {
         this.program.parse(args);
     }
+
 }
