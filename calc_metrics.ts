@@ -18,7 +18,6 @@ export class Metrics extends EventEmitter {
     private _db: Database.Database;
     private _info: Map<string, Map<string, number>>; // URL -> Information
     done: boolean = false;
-    rowNum: number = 0;
 
     constructor(db: Database.Database) {
         /**
@@ -92,16 +91,20 @@ export class Metrics extends EventEmitter {
          * Outputs:
          * - None
          */
-        const resolved = packInfo.get('resolved');
-        const issues = packInfo.get('issues');
-        if (resolved != undefined && issues != undefined) {
+        // const resolved = packInfo.get('resolved');
+        const issues = packInfo.get('issues/yr');
+        // if (resolved != undefined && issues != undefined) {
+        if (issues != undefined) {
             if (issues == 0) { 
                 metrics.set('correctness', 1); // if there are no issues, correctness is 1?
                 return 1;
             }
-            const correctness = resolved / issues;
-            metrics.set('correctness', correctness);
-            return correctness;
+            // const correctness = resolved / issues;
+            // metrics.set('correctness', correctness);
+            metrics.set('correctness', 1);
+
+            // return correctness;
+            return 1;
         } else console.error('Error calculating correctness: resolved issues or total issues not found');
         return 0;
     }
@@ -205,7 +208,8 @@ export class Metrics extends EventEmitter {
                 const correct = this._correctness(value, metrics);
                 const ramp = this._rampUp(value, metrics);
                 const response = this._responsiveness(value, metrics);
-                const license = value.get('license');
+                // const license = value.get('license');
+                const license = 1;
                 const net = this._netScore(bus, correct, ramp, response, license ? license : 0);
                 metrics.set('netScore', net);
                 database.updateEntry(this._db, key, undefined, JSON.stringify(Object.fromEntries(metrics)));
@@ -232,12 +236,12 @@ export class Metrics extends EventEmitter {
         // const x = rows.all();
         
         rows.forEach((row: RowInfo) => {
-            console.log(row);
-            // this._calc_callback(row);
+            // console.log(row);
+            this._calc_callback(row);
         });
         // await this._db.each<RowInfo>(`SELECT * FROM package_scores`, this._calc_callback.bind(this));
-        // this._calculateMetrics(); // calculate the metrics
-        this.emit('done', this.done);
+        this._calculateMetrics(); // calculate the metrics
+        this.emit('done', index);
 
     }
 }

@@ -9,7 +9,7 @@ rm metrics.db
 # Compile TypeScript files
 # echo "Compiling TypeScript..."
 if [ "$1" == "install" ]; then
-    npm install better-sqlite3 commander axios
+    npm install better-sqlite3 commander axios dotenv
     npm install --save-dev @types/better-sqlite3 @types/commander
     # tsc main.ts || { echo "Compilation failed"; exit 1; }
 elif [ -f "$1" ]; then

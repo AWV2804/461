@@ -3,6 +3,10 @@ import { exec } from 'child_process'
 import { Metrics } from './calc_metrics'
 import * as database from './database'
 import { Controller } from './controller'
+import { OutputMetrics } from './output_metrics'
+import { UrlHandler } from './url_handler'
+
+
 import fs from 'fs'
 
 function runNpmInstall(): void {
@@ -39,17 +43,19 @@ manager.registerCommand('process', 'Process a file of URLs for scoring', (args) 
         const lines = data.split('\n');
         const db = database.createConnection();
         const metric_calc = new Metrics(db);
-        const controller = new Controller(manager, metric_calc);
+        // console.log(lines.length);
+        const output_metrics = new OutputMetrics(db, lines.length);
+        const urlHandler = new UrlHandler(db);
+        const controller = new Controller(manager, metric_calc, output_metrics, urlHandler);
         database.createTable(db);
         lines.forEach((line: string, index: number) => {
             // console.log(line);
             database.addEntry(db, line);
             manager.emit('startProcessing', index+1)
-
         });
         
         // metric_calc.calc();
-        database.closeConnection(db);
+        // database.closeConnection(db);
         
     } else {
         console.error('No file specified.');
