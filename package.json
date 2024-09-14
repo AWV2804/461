@@ -14,12 +14,12 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^22.5.4",
+    "better-sqlite3": "^11.3.0",
     "commander": "^12.1.0",
-    "sqlite3": "^5.1.7",
     "typescript": "^5.6.2"
   },
   "devDependencies": {
-    "@types/commander": "^2.12.2",
-    "@types/sqlite3": "^3.1.11"
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/commander": "^2.12.2"
   }
 }
