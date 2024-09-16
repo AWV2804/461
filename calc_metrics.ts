@@ -1,7 +1,8 @@
+import { EventEmitter } from 'stream';
 import * as database from './database';
-import * as sqlite3 from 'sqlite3';
+import Database from 'better-sqlite3';
 
-interface RowInfo {
+export interface RowInfo {
     /**
      * Interface for the rows fetched from the database.
      * Only used to parse the data from the database and put it into correct data structures
@@ -13,20 +14,21 @@ interface RowInfo {
     metrics: string | null
 }
 
-export class Metrics {
-    private _db: sqlite3.Database;
+export class Metrics extends EventEmitter {
+    private _db: Database.Database;
     private _info: Map<string, Map<string, number>>; // URL -> Information
     done: boolean = false;
 
-    constructor(db: sqlite3.Database) {
+    constructor(db: Database.Database) {
         /**
          * Creates a Metrics class instance and opens a database connection. 
          */
+        super();
         this._db = db;
         this._info = new Map<string, Map<string, number>>();
     }
 
-    private _calc_callback(err: Error | null, row: RowInfo): void {
+    private _calc_callback(row: RowInfo): void {
         /**
          * Callback method to process the row data fetched from the database.
          * Map URLs to their respective information in order to calculate metrics later. 
@@ -40,18 +42,14 @@ export class Metrics {
          * Outputs:
          * - None
          */
-        if (err) {
-            console.error('Error fetching data', err);
-        } else {
-            try { // catch JSON.parse errors
-                if (row.information) {
-                    // if rowInformation is NULL, don't interact
-                    const parsedInfo = new Map<string, number>(Object.entries(JSON.parse(row.information))); // Parse the information from the JSON string
-                    this._info.set(row.url,parsedInfo); // Add the information to the map
-                }
-            } catch(e) {
-                console.error('Error parsing information', e);
+        try { // catch JSON.parse errors
+            if (row.information) {
+                // if rowInformation is NULL, don't interact
+                const parsedInfo = new Map<string, number>(Object.entries(JSON.parse(row.information))); // Parse the information from the JSON string
+                this._info.set(row.url,parsedInfo); // Add the information to the map
             }
+        } catch(e) {
+            console.error('Error parsing information', e);
         }
     }
 
@@ -93,16 +91,20 @@ export class Metrics {
          * Outputs:
          * - None
          */
-        const resolved = packInfo.get('resolved');
-        const issues = packInfo.get('issues');
-        if (resolved != undefined && issues != undefined) {
+        // const resolved = packInfo.get('resolved');
+        const issues = packInfo.get('issues/yr');
+        // if (resolved != undefined && issues != undefined) {
+        if (issues != undefined) {
             if (issues == 0) { 
                 metrics.set('correctness', 1); // if there are no issues, correctness is 1?
                 return 1;
             }
-            const correctness = resolved / issues;
-            metrics.set('correctness', correctness);
-            return correctness;
+            // const correctness = resolved / issues;
+            // metrics.set('correctness', correctness);
+            metrics.set('correctness', 1);
+
+            // return correctness;
+            return 1;
         } else console.error('Error calculating correctness: resolved issues or total issues not found');
         return 0;
     }
@@ -198,6 +200,7 @@ export class Metrics {
         /**
          * Calculates the metrics for each package sequentially, then stores the results in the database.
          **/ 
+        console.log("hi");
         this._info.forEach((value, key) => {
             if (value) {
                 const metrics = new Map<string, number>();
@@ -205,7 +208,8 @@ export class Metrics {
                 const correct = this._correctness(value, metrics);
                 const ramp = this._rampUp(value, metrics);
                 const response = this._responsiveness(value, metrics);
-                const license = value.get('license');
+                // const license = value.get('license');
+                const license = 1;
                 const net = this._netScore(bus, correct, ramp, response, license ? license : 0);
                 metrics.set('netScore', net);
                 database.updateEntry(this._db, key, undefined, JSON.stringify(Object.fromEntries(metrics)));
@@ -217,7 +221,7 @@ export class Metrics {
         this.done = true;
     }
 
-    public async calc(): Promise<void> {
+    public calc(index: number): void {
         /**
          * Wrapper function to calculate the metrics for all packages.
          * 
@@ -227,8 +231,17 @@ export class Metrics {
          * Outputs:
          * - None
          */
-        await this._db.each<RowInfo>(`SELECT * FROM package_scores`, this._calc_callback.bind(this));
+        // this._db.prepare
+        const rows = this._db.prepare(`SELECT * FROM package_scores WHERE id = ?`).all(index);
+        // const x = rows.all();
+        
+        rows.forEach((row: RowInfo) => {
+            // console.log(row);
+            this._calc_callback(row);
+        });
+        // await this._db.each<RowInfo>(`SELECT * FROM package_scores`, this._calc_callback.bind(this));
         this._calculateMetrics(); // calculate the metrics
+        this.emit('done', index);
 
     }
 }
