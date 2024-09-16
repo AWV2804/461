@@ -1,6 +1,7 @@
 import { EventEmitter } from 'stream';
 import * as database from './database';
 import Database from 'better-sqlite3';
+import now from 'performance-now';
 
 export interface RowInfo {
     /**
@@ -204,14 +205,25 @@ export class Metrics extends EventEmitter {
         this._info.forEach((value, key) => {
             if (value) {
                 const metrics = new Map<string, number>();
+                const before_bus = now();
                 const bus = this._busFactor(value, metrics);
+                const before_correct = now();
+                metrics.set('busTime', before_correct - before_bus);
                 const correct = this._correctness(value, metrics);
+                const before_ramp = now();
+                metrics.set('correctTime', before_ramp - before_correct);
                 const ramp = this._rampUp(value, metrics);
+                const before_response = now();
+                metrics.set('rampTime', before_response - before_ramp);
                 const response = this._responsiveness(value, metrics);
+                const before_license = now();
                 // const license = value.get('license');
+                metrics.set('beforeLicense', before_license - before_response);
                 const license = 1;
                 const net = this._netScore(bus, correct, ramp, response, license ? license : 0);
                 metrics.set('netScore', net);
+                const after_net = now();
+                metrics.set('netTime', after_net - before_license);
                 database.updateEntry(this._db, key, undefined, JSON.stringify(Object.fromEntries(metrics)));
 
             } else {
