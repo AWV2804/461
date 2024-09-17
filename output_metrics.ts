@@ -6,10 +6,15 @@ import { EventEmitter  } from 'stream';
 export class OutputMetrics extends EventEmitter {
     private _db: Database.Database;
     private fileNum: number;
-    constructor(db: Database.Database, fileNum: number) {
+    private fp: number;
+    private loglvl: number
+
+    constructor(db: Database.Database, fileNum: number, fp: number, loglvl: number) {
         super();
         this._db = db;
         this.fileNum = fileNum;
+        this.fp = fp;
+        this.loglvl = loglvl;
     }
 
     output_Metrics(index: number): void {

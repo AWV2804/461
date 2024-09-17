@@ -42,9 +42,14 @@ export class UrlHandler extends EventEmitter {
   private baseURL = 'https://api.github.com';
   private commitsMap = new Map<string, number>(); // Create a map to store data to calculate metrics
   private _db: Database.Database;
-  constructor(db: Database.Database) {
+  private fp: number;
+  private logLvl: number;
+
+  constructor(db: Database.Database, fp: number, logLvl: number) {
     super();
     this._db = db;
+    this.fp = fp;
+    this.logLvl = logLvl;
   }
   private async baseGet(url: string, apiKey: string, params?: any) {
       try {
@@ -420,7 +425,7 @@ export class UrlHandler extends EventEmitter {
       await this.getLicenseInfo(owner, repo);
       console.log(this.commitsMap);
       // Log the metrics stored in the map
-      database.updateEntry(this._db, row.url, JSON.stringify(Object.fromEntries(this.commitsMap)));
+      database.updateEntry(this._db, row.url, this.fp, this.logLvl, JSON.stringify(Object.fromEntries(this.commitsMap)));
       // console.log(this.commitsMap);
   }
   

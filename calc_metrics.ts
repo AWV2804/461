@@ -19,14 +19,18 @@ export class Metrics extends EventEmitter {
     private _db: Database.Database;
     private _info: Map<string, Map<string, number>>; // URL -> Information
     done: boolean = false;
+    private fp: number;
+    private loglvl: number;
 
-    constructor(db: Database.Database) {
+    constructor(db: Database.Database, fp: number, loglvl: number) {
         /**
          * Creates a Metrics class instance and opens a database connection. 
          */
         super();
         this._db = db;
         this._info = new Map<string, Map<string, number>>();
+        this.fp = fp;
+        this.loglvl = loglvl;
     }
 
     private _calc_callback(row: RowInfo): void {
@@ -223,7 +227,7 @@ export class Metrics extends EventEmitter {
                 metrics.set('netScore', net);
                 const after_net = now();
                 metrics.set('netTime', after_net - before_license);
-                database.updateEntry(this._db, key, undefined, JSON.stringify(Object.fromEntries(metrics)));
+                database.updateEntry(this._db, key, this.fp, this.loglvl, undefined, JSON.stringify(Object.fromEntries(metrics)));
 
             } else {
                 console.error('Error calculating metrics for ${key}: information not found');

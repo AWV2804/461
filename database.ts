@@ -2,13 +2,13 @@ import Database from 'better-sqlite3';
 
 
 
-export function createConnection(): Database.Database {
+export function createConnection(fp: number, loglvl: number): Database.Database {
     const db = new Database('metrics.db');
     db.pragma('journal_mode = WAL');
     return db;
 }
 
-export function createTable(db: Database.Database): void {
+export function createTable(db: Database.Database, fp: number, loglvl: number): void {
     db.exec(`
         CREATE TABLE IF NOT EXISTS package_scores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,19 +20,19 @@ export function createTable(db: Database.Database): void {
     console.log('Table created successfully.');
 }
 
-export function addEntry(db: Database.Database, url: string, information?: string, metrics?: string): void {
+export function addEntry(db: Database.Database, url: string, fp: number, loglvl: number, information?: string, metrics?: string): void {
     const stmt = db.prepare(`INSERT INTO package_scores (url, information, metrics) VALUES (?, ?, ?)`);
     stmt.run(url, information || null, metrics || null);
     console.log('Inserted data into table.');
 }
 
-export function updateEntry(db: Database.Database, url: string, information?: string, metrics?: string): void {
+export function updateEntry(db: Database.Database, url: string, fp: number, loglvl: number, information?: string, metrics?: string): void {
     const stmt = db.prepare(`UPDATE package_scores SET information = COALESCE(?, information), metrics = COALESCE(?, metrics) WHERE url = ?`);
     stmt.run(information || null, metrics || null, url);
     console.log('Updated table.');
 }
 
-export function closeConnection(db: Database.Database): void {
+export function closeConnection(db: Database.Database, fp: number, loglvl: number): void {
     db.close();
     console.log('Database connection closed.');
 }

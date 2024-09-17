@@ -5,52 +5,31 @@ import * as database from './database'
 import { Controller } from './controller'
 import { OutputMetrics } from './output_metrics'
 import { UrlHandler } from './url_handler'
-
+// import git from 'isomorphic-git'
 
 import fs from 'fs'
 
-function runNpmInstall(): void {
-    exec('npm install better-sqlite3 commander', (error, stdout, stderr) => {
-        if(error) {
-            console.error(`Error during npm install: ${error.message}`)
-            return;
-        }
-        if(stderr) {
-            console.error(`npm install stderr: ${stderr}`);
-        }
-
-        console.log(`npm install output: ${stdout}`);
-    })
-    exec('npm install --save-dev @types/better-sqlite3 @types/commander', (error, stdout, stderr) => {
-        if(error) {
-            console.error(`Error during npm install: ${error.message}`)
-            return;
-        }
-        if(stderr) {
-            console.error(`npm install stderr: ${stderr}`);
-        }
-
-        console.log(`npm install output: ${stdout}`);
-    })
-}
-
 const manager = new Manager();
+const logfile = process.env.LOG_FILE as string;
+const logLvl = process.env.LOG_LEVEL as string;
+
+const fp = fs.openSync(logfile, 'w');
 manager.registerCommand('process', 'Process a file of URLs for scoring', (args) => {
     if (args.file) {
         const filePath = args.file;
         const data = fs.readFileSync(filePath, 'utf8');
 
         const lines = data.split('\n');
-        const db = database.createConnection();
-        const metric_calc = new Metrics(db);
+        const db = database.createConnection(fp, +logLvl);
+        const metric_calc = new Metrics(db, fp, +logLvl);
         // console.log(lines.length);
-        const output_metrics = new OutputMetrics(db, lines.length);
-        const urlHandler = new UrlHandler(db);
-        const controller = new Controller(manager, metric_calc, output_metrics, urlHandler);
-        database.createTable(db);
+        const output_metrics = new OutputMetrics(db, lines.length, fp, +logLvl);
+        const urlHandler = new UrlHandler(db, fp, +logLvl);
+        const controller = new Controller(manager, metric_calc, output_metrics, urlHandler, fp, +logLvl);
+        database.createTable(db, fp, +logLvl);
         lines.forEach((line: string, index: number) => {
             // console.log(line);
-            database.addEntry(db, line);
+            database.addEntry(db, line, fp, +logLvl);
             manager.emit('startProcessing', index+1)
         });
         
