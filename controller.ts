@@ -11,12 +11,17 @@ export class Controller extends EventEmitter {
     private metrics: cm.Metrics;
     private outputMetrics: om.OutputMetrics;
     private urlHandler: url_handler.UrlHandler;
-    constructor(manger: manager.Manager, metrics: cm.Metrics, outputMetrics: om.OutputMetrics, urlHandler: url_handler.UrlHandler) {
+    private fp: number;
+    private loglvl: number;
+
+    constructor(manger: manager.Manager, metrics: cm.Metrics, outputMetrics: om.OutputMetrics, urlHandler: url_handler.UrlHandler, fp: number, loglvl: number) {
         super();
         this.manger = manger;
         this.metrics = metrics;
         this.outputMetrics = outputMetrics;
         this.urlHandler = urlHandler;
+        this.fp = fp;
+        this.loglvl = loglvl;
         this.setupListeners();
     }
 
@@ -40,7 +45,7 @@ export class Controller extends EventEmitter {
             console.log(`Outputting metrics for url at index: ${index}`);
         })
         this.outputMetrics.on('close', (db: Database.Database) => {
-            database.closeConnection(db);
+            database.closeConnection(db, this.fp, this.loglvl);
         })
     }
 }
