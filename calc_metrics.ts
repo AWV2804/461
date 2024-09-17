@@ -201,7 +201,6 @@ export class Metrics extends EventEmitter {
         /**
          * Calculates the metrics for each package sequentially, then stores the results in the database.
          **/ 
-        console.log("hi");
         this._info.forEach((value, key) => {
             if (value) {
                 const metrics = new Map<string, number>();
