@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Check if TypeScript is installed
+if ! command -v tsc &> /dev/null; then
+    echo "TypeScript is not installed. Please install it first."
+    exit 1
+fi
+rm metrics.db
+# Compile TypeScript files
+# echo "Compiling TypeScript..."
+if [ "$1" == "install" ]; then
+    npm install --save better-sqlite3 commander axios dotenv isomorphic-git
+    npm install --save-dev typescript @types/better-sqlite3 @types/commander 
+    # tsc main.ts || { echo "Compilation failed"; exit 1; }
+elif [ -f "$1" ]; then
+    # tsc || { echo "Compilation failed"; exit 1; }
+    tsc
+else
+    echo "Usage: ./run install or ./run URL_FILE or ./run test"
+    # node main.js $1
+    exit 1
+fi
+
+# Check the argument passed to the script
+# if [ "$1" == "install" ]; then
+#     echo "Running the program with 'install' command..."
+#     node main.js install || { echo "Failed to run the program with 'install'"; exit 1; }
+if [ "$1" == "test" ]; then
+    echo "Testing"
+    node main.js test || { echo "Failed to run the program with 'test'"; exit 1; }
+elif [ -f "$1" ]; then
+    echo "Processing file: $1"
+    # Run your compiled TypeScript program with the provided file as an argument
+    node main.js process "$1" || { echo "Failed to run the program"; exit 1; }
+fi

@@ -1,11 +1,32 @@
 {
+  "name": "461",
+  "version": "1.0.0",
+  "description": "Atharva Rao Adhvik Kannan Noah Kim Andrew Tu",
+  "main": "database.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
+    "@types/node": "^22.5.4",
     "axios": "^1.7.7",
+    "better-sqlite3": "^11.3.0",
     "dotenv": "^16.4.5",
-    "node-fetch": "^3.3.2",
-    "sqlite3": "^5.1.7"
+    "isomorphic-git": "^1.27.1"
+    "performance-now": "^2.1.0",
+    "stream": "^0.0.3",
+    "typescript": "^5.6.2"
   },
   "devDependencies": {
-    "@types/node": "^22.5.4"
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/commander": "^2.12.2",
+    "commander": "^12.1.0",
+    "sqlite3": "^5.1.7",
+    "typescript": "^5.6.2"
   }
 }

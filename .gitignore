@@ -1,0 +1,13 @@
+.nfs*
+# JS files should be generated from TS
+*.js
+*.js.map
+
+# Don't need node_modules dir should be installed from package.json
+node_modules/
+
+#vscode stuff
+.vscode/
+
+#Other IDE stuff
+.DS_Store

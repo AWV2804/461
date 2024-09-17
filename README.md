@@ -22,25 +22,34 @@ Andrew Tu
 
 # Metric Calculations:
 - Bus Factor:
-    - 1 - (commits by top 3 contributors) / total number of commits in the last year
+    - (1 - (commits by top 3 contributors) / total number of commits in the last year)
 - Correctness:
-    - 1:
-    - 
+    - Number of issues resolved in the past  year / total number of issues in the past year
 - Ramp Up: 
-    - 
-- Responsiveness: 
-    - Sum of ticket weights divided by total tickets in the past year:
-        - 1: ticket closed within 3 days
-        - 0.7: ticket closed within 3-7 days
-        - 0.4: ticket closed within 7-14 days
-        - 0.1: ticket closed within 14-31 days
+    - 1.0: 1.2M+ downloads
+    - 0.9: 500k-1.2M downloads
+    - 0.6: 50k-500k downloads
+    - 0.3: 1k-50k downloads
+    - 0: < 1k downloads
+- Responsiveness:
+    - Sum of issues weights divided by total issues in the past year
+    - Weights:
+        - 1: issues closed within 3 days
+        - 0.7: issues closed within 3-7 days
+        - 0.4: issues closed within 7-14 days
+        - 0.1: issues closed within 14-31 days
         - 0: else
 - License:
     - 1: Compatible 
     - 0: Incompatible
+- NetScore:
+    - (Sum of (weight x metric score)) x license
+    - Weights:
+        - 0.4 - Responsiveness
+        - 0.3 - Correctness
+        - 0.1 - Bus Factor
+        - 0.2 - Ramp Up
 
 ### Other Info
 - `sqlite3 atharvaisanidiot.db` in the command line will let you type commands from the command line to see things in the database. Use this as a quick way to test if stuff is working
 - Add any functions you want for selecting specific information, or just do it in your own code. s
-
-
