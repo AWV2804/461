@@ -24,7 +24,7 @@ Andrew Tu
 - Bus Factor:
     - (1 - (commits by top 3 contributors) / total number of commits in the last year)
 - Correctness:
-    - Number of issues resolved / total number of issues
+    - Number of issues resolved in the past  year / total number of issues in the past year
 - Ramp Up: 
     - 1.0: 1.2M+ downloads
     - 0.9: 500k-1.2M downloads
@@ -32,7 +32,7 @@ Andrew Tu
     - 0.3: 1k-50k downloads
     - 0: < 1k downloads
 - Responsiveness:
-    - Sum of issues weights divided by total issues in the past six months
+    - Sum of issues weights divided by total issues in the past year
     - Weights:
         - 1: issues closed within 3 days
         - 0.7: issues closed within 3-7 days
