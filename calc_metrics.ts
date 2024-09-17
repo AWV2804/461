@@ -2,6 +2,7 @@ import { EventEmitter } from 'stream';
 import * as database from './database';
 import Database from 'better-sqlite3';
 import now from 'performance-now';
+import fs from 'fs';
 
 export interface RowInfo {
     /**
@@ -54,7 +55,8 @@ export class Metrics extends EventEmitter {
                 this._info.set(row.url,parsedInfo); // Add the information to the map
             }
         } catch(e) {
-            console.error('Error parsing information', e);
+            console.error(`Error parsing information for ${row.url}: ${e}`);
+            process.exit(1);
         }
     }
 
@@ -74,14 +76,16 @@ export class Metrics extends EventEmitter {
         const commits = packInfo.get('commits/yr');
         if (commits != undefined && top3) {
             if (commits == 0) { // if there are no commits in the past year, bus factor is 0?
-                metrics.set('busFactor', 0); 
+                metrics.set('BusFactor', 0); 
                 return 0;
             }
             const busFactor = 1 - (top3 / commits);
-            metrics.set('busFactor', busFactor);
+            metrics.set('BusFactor', busFactor);
             return busFactor;
-        } else console.error('Error calculating bus factor: total commits or commits by top 3 contributors not found');
-        return 0;
+        } else {
+            console.error('Error calculating bus factor: total commits or commits by top 3 contributors not found');
+            process.exit(1);
+        }
     }
 
     private _correctness(packInfo: Map<string, number>, metrics: Map<string, number>) : number {
@@ -101,17 +105,19 @@ export class Metrics extends EventEmitter {
         // if (resolved != undefined && issues != undefined) {
         if (issues != undefined) {
             if (issues == 0) { 
-                metrics.set('correctness', 1); // if there are no issues, correctness is 1?
+                metrics.set('Correctness', 1); // if there are no issues, correctness is 1?
                 return 1;
             }
             // const correctness = resolved / issues;
             // metrics.set('correctness', correctness);
-            metrics.set('correctness', 1);
+            metrics.set('Correctness', 1);
 
             // return correctness;
             return 1;
-        } else console.error('Error calculating correctness: resolved issues or total issues not found');
-        return 0;
+        } else {
+            console.error('Error calculating correctness: resolved issues or total issues not found');
+            process.exit(1);
+        }
     }
 
     private _rampUp(packInfo: Map<string, number>, metrics: Map<string, number>): number {
@@ -137,10 +143,12 @@ export class Metrics extends EventEmitter {
             else if (downloads < 50000) val = 0.3;
             else if (downloads < 500000) val = 0.6;
             else if (downloads < 1200000) val = 0.9;
-            metrics.set('rampUp', val);
+            metrics.set('RampUp', val);
             return val;
-        } else console.error('Error calculating ramp up: number of downloads not found');
-        return 0;
+        } else {
+            console.error('Error calculating ramp up: number of downloads not found');
+            process.exit(1);
+        }
     }
 
     private _responsiveness(packInfo: Map<string, number>, metrics: Map<string, number>): number {
@@ -168,14 +176,16 @@ export class Metrics extends EventEmitter {
         const issues = packInfo.get('issues/yr');
         if (iss3 != undefined && iss7 != undefined && iss14 != undefined && iss31 != undefined && issues != undefined) {
             if (issues == 0){
-                metrics.set('responsiveness', 1); // if there are no issues, responsiveness is 1?
+                metrics.set('ResponsiveMaintainer', 1); // if there are no issues, responsiveness is 1?
                 return 1;
             }
             const responsiveness = (iss3 + iss7 * 0.7 + iss14 * 0.4 + iss31 * 0.1) / issues;
-            metrics.set('responsiveness', responsiveness);
+            metrics.set('ResponsiveMaintainer', responsiveness);
             return responsiveness;
-        } else console.error('Error calculating responsiveness: resolved issues or total issues not found');
-        return 0;
+        } else {
+            console.error('Error calculating responsiveness: resolved issues or total issues not found');
+            process.exit(1);
+        }
     }
 
     private _netScore (bus: number, correct: number, ramp: number, response: number, license: number): number {
@@ -211,26 +221,28 @@ export class Metrics extends EventEmitter {
                 const before_bus = now();
                 const bus = this._busFactor(value, metrics);
                 const before_correct = now();
-                metrics.set('busTime', before_correct - before_bus);
+                metrics.set('BusFactor_Latency', before_correct - before_bus);
                 const correct = this._correctness(value, metrics);
                 const before_ramp = now();
-                metrics.set('correctTime', before_ramp - before_correct);
+                metrics.set('Correctness_Latency', before_ramp - before_correct);
                 const ramp = this._rampUp(value, metrics);
                 const before_response = now();
-                metrics.set('rampTime', before_response - before_ramp);
+                metrics.set('RampUp_Latency', before_response - before_ramp);
                 const response = this._responsiveness(value, metrics);
                 const before_license = now();
+                metrics.set("ResponsiveMaintainer_Latency", before_license - before_response);
                 // const license = value.get('license');
-                metrics.set('beforeLicense', before_license - before_response);
                 const license = 1;
+                const before_net = now();
+                metrics.set('License_Latency', before_net - before_license);
                 const net = this._netScore(bus, correct, ramp, response, license ? license : 0);
-                metrics.set('netScore', net);
+                metrics.set('NetScore', net);
                 const after_net = now();
-                metrics.set('netTime', after_net - before_license);
+                metrics.set('NetScore_Latency', after_net - before_net);
                 database.updateEntry(this._db, key, this.fp, this.loglvl, undefined, JSON.stringify(Object.fromEntries(metrics)));
-
             } else {
                 console.error('Error calculating metrics for ${key}: information not found');
+                process.exit(1);
             }
         });
         this.done = true;
@@ -251,7 +263,7 @@ export class Metrics extends EventEmitter {
         // const x = rows.all();
         
         rows.forEach((row: RowInfo) => {
-            // console.log(row);
+            if (this.loglvl == 2) fs.writeFileSync(this.fp, JSON.stringify(row));
             this._calc_callback(row);
         });
         // await this._db.each<RowInfo>(`SELECT * FROM package_scores`, this._calc_callback.bind(this));
