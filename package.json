@@ -17,12 +17,13 @@
     "axios": "^1.7.7",
     "better-sqlite3": "^11.3.0",
     "dotenv": "^16.4.5",
-    "typescript": "^5.6.2"
+    "isomorphic-git": "^1.27.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
     "@types/commander": "^2.12.2",
     "commander": "^12.1.0",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "typescript": "^5.6.2"
   }
 }
