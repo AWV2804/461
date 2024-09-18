@@ -22,13 +22,13 @@ manager.registerCommand('process', 'Process a file of URLs for scoring', (args) 
         const lines = data.split('\n');
         const db = database.createConnection(fp, +logLvl);
         const metric_calc = new Metrics(db, fp, +logLvl);
-        // console.log(lines.length);
+        console.log(lines);
         const output_metrics = new OutputMetrics(db, lines.length, fp, +logLvl);
         const urlHandler = new UrlHandler(db, fp, +logLvl);
         const controller = new Controller(manager, metric_calc, output_metrics, urlHandler, fp, +logLvl);
         database.createTable(db, fp, +logLvl);
         lines.forEach((line: string, index: number) => {
-            // console.log(line);
+            console.log(line);
             database.addEntry(db, line, fp, +logLvl);
             manager.emit('startProcessing', index+1)
         });
