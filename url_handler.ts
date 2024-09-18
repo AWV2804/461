@@ -55,20 +55,26 @@ export class UrlHandler extends EventEmitter {
     this.fp = fp;
     this.logLvl = logLvl;
   }
-  private async baseGet(url: string, apiKey: string, params?: any) {
-      try {
-          const response = await axios.get(url, {
-              headers: {
-                  Authorization: `Bearer ${apiKey}`
-              },
-              params: params
-          });
-          return response;
-      } catch (error) {
-          console.error('Error occurred while making the request:', error);
-          process.exit(1);
-      }
+  private async baseGet(url: string, token: string, params?: any): Promise<any> {
+  try {
+    const headers: any = {
+      'Accept': 'application/vnd.github.v3+json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `token ${token}`;
+    }
+
+    const response = await axios.get(url, {
+      headers,
+      params,
+    });
+    return response;
+  } catch (error) {
+    console.error('Error occurred while making the request:', error);
+    throw error; // Let the caller handle the error
   }
+}
   
   
   // Fetch commits by the top 3 contributors in the past year and sum their contributions
@@ -79,6 +85,11 @@ export class UrlHandler extends EventEmitter {
     // Step 1: Get contributors and find top 3
     const contributorsUrl = `${this.baseURL}/repos/${owner}/${repo}/contributors`;
     const contributors = await this.baseGet(contributorsUrl, this.token, { per_page: 100 });
+
+    if (!Array.isArray(contributors.data)) {
+        console.error('Expected contributors.data to be an array, but got:', contributors.data);
+        throw new Error('Invalid data received from GitHub API for contributors');
+    }
 
     // Sort contributors by number of commits and select top 3
     const topContributors = contributors.data
@@ -104,6 +115,12 @@ export class UrlHandler extends EventEmitter {
             };
 
             const commits = await this.baseGet(url, this.token, params);
+
+            // Check if commits.data is an array
+            if (!Array.isArray(commits.data)) {
+                console.error('Expected commits.data to be an array, but got:', commits.data);
+                throw new Error('Invalid data received from GitHub API for commits');
+            }
 
             contributorCommits += commits.data.length;
 
@@ -189,135 +206,157 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
   
   
   // Fetch the number of resolved (closed) issues
-  
-  
-  
+
   private async getClosedIssues(owner: string, repo: string) {
-      const now = new Date();
-      const sixMonthsAgo = new Date();
-      sixMonthsAgo.setMonth(now.getMonth() - 6);
-    
-      const oneYearAgo = new Date();
-      oneYearAgo.setFullYear(now.getFullYear() - 1);
-    
-      let page = 1;
-      const perPage = 100;
-      let issuesSixMonths: Issue[] = [];
-      let issuesOneYear: Issue[] = [];
-      let hasMoreSixMonths = true;
-      let hasMoreOneYear = true;
-    
-      // Fetch issues closed within the last 6 months
-      while (hasMoreSixMonths) {
-        const params = {
-          state: 'closed',
-          since: sixMonthsAgo.toISOString(),
-          per_page: perPage,
-          page: page,
-        };
-    
-        const url = `${this.baseURL}/repos/${owner}/${repo}/issues`;
-    
+    const now = new Date();
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(now.getMonth() - 6);
+
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(now.getFullYear() - 1);
+
+    const perPage = 100;
+    let page = 1;
+    let issuesSixMonths: Issue[] = [];
+    let issuesOneYear: Issue[] = [];
+
+    // Initialize counts
+    let iss3 = 0;
+    let iss7 = 0;
+    let iss14 = 0;
+    let iss31 = 0;
+
+    // Fetch issues closed within the last 6 months using the Search API
+    const sixMonthsAgoISO = sixMonthsAgo.toISOString().split('T')[0]; // YYYY-MM-DD
+    let hasMoreSixMonths = true;
+
+    while (hasMoreSixMonths) {
+      const params = {
+        q: `repo:${owner}/${repo} is:issue is:closed closed:>=${sixMonthsAgoISO}`,
+        per_page: perPage,
+        page: page,
+      };
+
+      const url = `${this.baseURL}/search/issues`;
+
+      try {
         const response = await this.baseGet(url, this.token, params);
         const data = response.data;
-    
-        if (data.length === 0) {
+
+        const issues = data.items;
+        if (issues.length === 0) {
           hasMoreSixMonths = false;
         } else {
-          // Exclude pull requests
-          const filteredIssues = data.filter((issue: any) => !issue.pull_request);
-          issuesSixMonths = issuesSixMonths.concat(filteredIssues);
+          issuesSixMonths = issuesSixMonths.concat(issues);
           page++;
+          // Check if we've reached the last page
+          const totalCount = data.total_count;
+          if (issuesSixMonths.length >= totalCount) {
+            hasMoreSixMonths = false;
+          }
         }
+      } catch (error: any) {
+        console.error('Error fetching issues from GitHub API:', error.message);
+        break;
       }
-    
-      // Reset page counter for one-year data
-      page = 1;
-    
-      // Fetch issues closed within the last year
-      while (hasMoreOneYear) {
-        const params = {
-          state: 'closed',
-          since: oneYearAgo.toISOString(),
-          per_page: perPage,
-          page: page,
-        };
-    
-        const url = `${this.baseURL}/repos/${owner}/${repo}/issues`;
-    
+    }
+
+    // Reset page counter for one-year data
+    page = 1;
+    let hasMoreOneYear = true;
+    const oneYearAgoISO = oneYearAgo.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    // Fetch issues closed within the last year using the Search API
+    while (hasMoreOneYear) {
+      const params = {
+        q: `repo:${owner}/${repo} is:issue is:closed closed:>=${oneYearAgoISO}`,
+        per_page: perPage,
+        page: page,
+      };
+
+      const url = `${this.baseURL}/search/issues`;
+
+      try {
         const response = await this.baseGet(url, this.token, params);
         const data = response.data;
-    
-        if (data.length === 0) {
+
+        const issues = data.items;
+        if (issues.length === 0) {
           hasMoreOneYear = false;
         } else {
-          // Exclude pull requests
-          const filteredIssues = data.filter((issue: any) => !issue.pull_request);
-          issuesOneYear = issuesOneYear.concat(filteredIssues);
+          issuesOneYear = issuesOneYear.concat(issues);
           page++;
+          // Check if we've reached the last page
+          const totalCount = data.total_count;
+          if (issuesOneYear.length >= totalCount) {
+            hasMoreOneYear = false;
+          }
         }
+      } catch (error: any) {
+        console.error('Error fetching issues from GitHub API:', error.message);
+        break;
       }
-    
-      // Initialize counts
-      let iss3 = 0;
-      let iss7 = 0;
-      let iss14 = 0;
-      let iss31 = 0;
-    
-      issuesSixMonths.forEach((issue) => {
-        const createdAt = new Date(issue.created_at);
-        const closedAt = new Date(issue.closed_at);
-        const diffDays = Math.ceil(
-          (closedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
-        );
-    
-        if (diffDays <= 3) {
-          iss3++;
-        } else if (diffDays <= 7) {
-          iss7++;
-        } else if (diffDays <= 14) {
-          iss14++;
-        } else if (diffDays <= 31) {
-          iss31++;
-        }
-      });
-    
-      // Store counts in commitsMap
-      this.commitsMap.set('iss3', iss3);
-      this.commitsMap.set('iss7', iss7);
-      this.commitsMap.set('iss14', iss14);
-      this.commitsMap.set('iss31', iss31);
-      this.commitsMap.set('issues/6mth', issuesSixMonths.length);
-      this.commitsMap.set('issues/yr', issuesOneYear.length);
+    }
+
+    // Calculate issue closure times for issues closed in the past 6 months
+    issuesSixMonths.forEach((issue) => {
+      const createdAt = new Date(issue.created_at);
+      const closedAt = new Date(issue.closed_at);
+      const diffDays = Math.ceil(
+        (closedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      if (diffDays <= 3) {
+        iss3++;
+      } else if (diffDays <= 7) {
+        iss7++;
+      } else if (diffDays <= 14) {
+        iss14++;
+      } else if (diffDays <= 31) {
+        iss31++;
+      }
+    });
+
+    // Store counts in commitsMap
+    this.commitsMap.set('iss3', iss3);
+    this.commitsMap.set('iss7', iss7);
+    this.commitsMap.set('iss14', iss14);
+    this.commitsMap.set('iss31', iss31);
+    this.commitsMap.set('issuesClosed6mth', issuesSixMonths.length);
+    this.commitsMap.set('issuesClosedYr', issuesOneYear.length);
   }
   
   
-  // // Fetch the license information of the repository and store the SPDX ID
-  // private async getLicenseInfo(owner: string, repo: string) {
-  //     const url = `${this.baseURL}/repos/${owner}/${repo}/license`;
-  //     try {
-  //         const licenseInfo: any = await this.baseGet(url, this.token);
-  //         const spdxId = licenseInfo.license?.spdx_id || 'No SPDX ID';
-  //         //console.log('License:', spdxId);
+  private async checkLicense(owner: string, repo: string): Promise<void> {
+    const repoUrl = `https://github.com/${owner}/${repo}.git`;
+    console.log(`Cloning repository from ${repoUrl}...`);
   
-  //         // Store the SPDX ID in the map
-  //         this.commitsMap.set('license', spdxId);
-  //     } catch (error) {
-  //         console.error('Error fetching license information:', error);
-  //         process.exit(1);
-  //     }
-  // }
-
-  private async checkLicense(repoUrl: string): Promise<void> {
-    const dir = path.join(__dirname, 'temp-repo');
-
+    // Create a unique temporary directory for each repository
+    const dir = path.join(__dirname, `temp-repo-${owner}-${repo}-${Date.now()}`);
+  
     // Remove the temp directory if it already exists
     if (fs.existsSync(dir)) {
       fs.rmSync(dir, { recursive: true, force: true });
     }
-
+  
+    let defaultBranch = 'main';
+  
     try {
-      // Clone the repository with depth 1
+      // Fetch the default branch from GitHub API
+      const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}`, {
+        headers: {
+          'Authorization': `token ${process.env.GITHUB_TOKEN}`, // Ensure GITHUB_TOKEN is set in your environment
+        },
+      });
+      defaultBranch = response.data.default_branch || 'main';
+      console.log(`Default branch for ${owner}/${repo} is ${defaultBranch}`);
+    } catch (error) {
+      console.error('Error fetching repository data from GitHub API:', error.message);
+      console.log(`Falling back to default branch: ${defaultBranch}`);
+    }
+  
+    try {
+      // Clone the repository using the default branch
       await git.clone({
         fs,
         http,
@@ -325,50 +364,128 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
         url: repoUrl,
         singleBranch: true,
         depth: 1,
+        ref: defaultBranch,
       });
-
-      // Possible license file names
+      console.log(`Repository cloned successfully to ${dir}`);
+  
+      // Possible license file names (case-insensitive)
       const licenseFiles = [
         'LICENSE',
         'LICENSE.txt',
         'LICENSE.md',
         'COPYING',
         'COPYING.txt',
+        'UNLICENSE',
       ];
-
-      let licenseContent = '';
-
-      // Search for the license file
-      for (const fileName of licenseFiles) {
-        const filePath = path.join(dir, fileName);
-        if (fs.existsSync(filePath)) {
-          licenseContent = fs.readFileSync(filePath, 'utf-8');
-          break;
+  
+      const readmeFiles = [
+        'README',
+        'README.txt',
+        'README.md',
+      ];
+  
+      let licenseExists = false;
+  
+      // Recursive function to search for license files
+      const searchForLicense = (currentDir: string): void => {
+        const filesAndDirs = fs.readdirSync(currentDir);
+        for (const name of filesAndDirs) {
+          const fullPath = path.join(currentDir, name);
+          const stats = fs.statSync(fullPath);
+      
+          if (stats.isDirectory()) {
+            searchForLicense(fullPath);
+            if (licenseExists) return; // Exit if license is found
+          } else if (stats.isFile()) {
+            const upperName = name.toUpperCase();
+            // Check for license files
+            if (licenseFiles.includes(upperName) && stats.size > 0) {
+              licenseExists = true;
+              console.log(`License file found: ${fullPath}`);
+              return; // Exit function
+            }
+            // Check for README files
+            else if (readmeFiles.includes(upperName) && stats.size > 0) {
+              console.log(`README file found: ${fullPath}`);
+              const content = fs.readFileSync(fullPath, 'utf8');
+              if (searchReadmeForLicense(content)) {
+                licenseExists = true;
+                console.log(`License information found in README: ${fullPath}`);
+                return; // Exit function
+              }
+            }
+            // Check for package.json
+            else if (name.toLowerCase() === 'package.json' && stats.size > 0) {
+              console.log(`package.json file found: ${fullPath}`);
+              const content = fs.readFileSync(fullPath, 'utf8');
+              try {
+                const packageJson = JSON.parse(content);
+                if (packageJson.license) {
+                  licenseExists = true;
+                  console.log(`License information found in package.json: ${fullPath}`);
+                  return; // Exit function
+                }
+              } catch (err) {
+                console.error(`Error parsing package.json: ${err.message}`);
+              }
+            }
+          }
         }
-      }
-
-      let result = 0;
-
-      if (licenseContent) {
-        result = 1;
-      } else {
-        console.log('No license file found.');
-      }
-
-      // Add the result to the commitsMap
-      this.commitsMap.set('License', result);
-
+      };
+      
+  
+      // Function to search for license information in README content
+      const searchReadmeForLicense = (content: string): boolean => {
+        // Convert content to lowercase for case-insensitive search
+        const lowerContent = content.toLowerCase();
+      
+        // Define keywords or patterns to search for, including both "license" and "licence"
+        const licenseKeywords = [
+          'license',
+          'licence', // Added British English spelling
+          'licensed under',
+          'licenced under', // Added British English spelling
+          'mit license',
+          'mit licence', // Added British English spelling
+          'apache license',
+          'apache licence', // Added British English spelling
+          'gpl',
+          'bsd license',
+          'bsd licence', // Added British English spelling
+          'lgpl',
+          'mozilla public license',
+          'mozilla public licence', // Added British English spelling
+          'unlicense',
+          'unlicence', // Added British English spelling
+          'isc license',
+          'isc licence', // Added British English spelling
+        ];
+      
+        // Check if any of the keywords are present
+        return licenseKeywords.some(keyword => lowerContent.includes(keyword));
+      };
+  
+      // Start the recursive search from the repository root directory
+      searchForLicense(dir);
+  
+      // Set result to 1 if a license is found, otherwise 0
+      const result = licenseExists ? 1 : 0;
+      console.log(`License exists: ${licenseExists}, result: ${result}`);
+      this.commitsMap.set('license', result);
+  
     } catch (error) {
-      console.error('Error during cloning or license checking:', error);
-      // Set result to 0 in case of error
-      this.commitsMap.set('License', 0);
+      console.error('Error during cloning or license checking:', error.message);
+      // Set license to 0 in case of error
+      this.commitsMap.set('license', 0);
     } finally {
-      // Ensure the temp directory is removed even if an error occurs
+      // Clean up the temporary directory
       if (fs.existsSync(dir)) {
         fs.rmSync(dir, { recursive: true, force: true });
+        console.log(`Removed temporary directory: ${dir}`);
       }
     }
   }
+  
   
   private async getOwnerAndRepo(url: string): Promise<OwnerRepo> {
     if (this.isGitHubUrl(url)) {
@@ -406,23 +523,29 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
     }
   }
   
-  private isGitHubUrl(url: string): boolean {
-    // Checks if the URL is a GitHub repository URL
-    return /^https?:\/\/(www\.)?github\.com\/[^\/]+\/[^\/]+/i.test(url);
-  }
-  
   private isNpmUrl(url: string): boolean {
     // Checks if the URL is an npm package URL
     return /^https?:\/\/(www\.)?npmjs\.com\/package\/(@?[^\/]+)/i.test(url);
   }
   
-  private extractOwnerRepoFromGitHubUrl(url: string): OwnerRepo | null {
-    // Extracts the owner and repo from a GitHub URL
-    const regex = /^https?:\/\/(www\.)?github\.com\/([^\/]+)\/([^\/]+)(\/|$)/i;
-    const match = url.match(regex);
-    if (match && match[2] && match[3]) {
-        return { owner: match[2], repo: match[3] };
+  private extractOwnerRepoFromGitHubUrl(urlString: string): OwnerRepo | null {
+    console.log(`Extracting owner and repo from URL: ${urlString}`);
+  
+    try {
+      const url = new URL(urlString);
+      const pathname = url.pathname.replace(/^\//, ''); // Remove leading '/'
+      const pathParts = pathname.split('/');
+      if (pathParts.length >= 2) {
+        const owner = pathParts[0];
+        const repo = pathParts[1];
+        console.log(`Extracted owner: "${owner}", repo: "${repo}"`);
+        return { owner, repo };
+      }
+    } catch (error) {
+      console.error('Error parsing URL:', error);
     }
+  
+    console.error('Failed to extract owner and repo from URL.');
     return null;
   }
   
@@ -437,63 +560,116 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
   }
   
   private async getRepositoryUrlFromNpm(packageName: string): Promise<string | null> {
-    // Fetches the repository URL from the npm registry
     const registryUrl = `https://registry.npmjs.org/${packageName}`;
     try {
-        const response = await axios.get(registryUrl);
-        const data = response.data;
+      const response = await axios.get(registryUrl);
+      const data = response.data;
   
-        // First, check if 'repository' exists at the top level
-        let repoUrl: string | null = this.extractRepositoryUrl(data.repository);
+      // Initialize an array to hold possible URLs
+      const possibleUrls: string[] = [];
+  
+      // Check 'repository' field at the top level
+      if (data.repository) {
+        const repoUrl = this.extractRepositoryUrl(data.repository);
         if (repoUrl) {
-            repoUrl = this.normalizeRepoUrl(repoUrl);
-            return repoUrl;
+          possibleUrls.push(repoUrl);
+        }
+      }
+  
+      // Check 'homepage' field at the top level
+      if (data.homepage) {
+        possibleUrls.push(data.homepage);
+      }
+  
+      // Check 'bugs.url' field at the top level (sometimes used)
+      if (data.bugs && data.bugs.url) {
+        possibleUrls.push(data.bugs.url);
+      }
+  
+      // Check 'latest' version fields
+      const latestVersionNumber = data['dist-tags']?.latest;
+      if (latestVersionNumber && data.versions && data.versions[latestVersionNumber]) {
+        const latestVersionData = data.versions[latestVersionNumber];
+  
+        // Check 'repository' field in the latest version data
+        if (latestVersionData.repository) {
+          const repoUrl = this.extractRepositoryUrl(latestVersionData.repository);
+          if (repoUrl) {
+            possibleUrls.push(repoUrl);
+          }
         }
   
-        // If not, look for the 'latest' version and check its 'repository' field
-        const latestVersionNumber = data['dist-tags']?.latest;
-        if (latestVersionNumber && data.versions && data.versions[latestVersionNumber]) {
-            const latestVersionData = data.versions[latestVersionNumber];
-            repoUrl = this.extractRepositoryUrl(latestVersionData.repository);
-            if (repoUrl) {
-                repoUrl = this.normalizeRepoUrl(repoUrl);
-                return repoUrl;
-            }
+        // Check 'homepage' field in the latest version data
+        if (latestVersionData.homepage) {
+          possibleUrls.push(latestVersionData.homepage);
         }
   
-        // Repository URL not found
-        return null;
-    } catch (error) {
-        console.error(`Error fetching npm package data: ${error.message}`);
-        process.exit(1);
+        // Check 'bugs.url' field in the latest version data
+        if (latestVersionData.bugs && latestVersionData.bugs.url) {
+          possibleUrls.push(latestVersionData.bugs.url);
+        }
+      }
+  
+      // Now, process the possible URLs to find a GitHub URL
+      for (let url of possibleUrls) {
+        if (url) {
+          url = this.normalizeRepoUrl(url);
+          if (this.isGitHubUrl(url)) {
+            return url;
+          }
+        }
+      }
+  
+      // Repository URL not found
+      console.error('Repository URL not found in npm package data.');
+      return null;
+    } catch (error: any) {
+      console.error(`Error fetching npm package data: ${error.message}`);
+      throw error; // Let the caller handle the error
     }
   }
+  
   
   private extractRepositoryUrl(repository: any): string | null {
     // Extracts the repository URL from the 'repository' field
     if (repository) {
-        if (typeof repository === 'string') {
-            return repository;
-        } else if (typeof repository.url === 'string') {
-            return repository.url;
-        }
+      if (typeof repository === 'string') {
+        return repository;
+      } else if (typeof repository.url === 'string') {
+        return repository.url;
+      }
     }
     return null;
   }
   
   private normalizeRepoUrl(url: string): string {
-    // Normalizes the repository URL
-    url = url.replace(/^git\+/, '').replace(/\.git$/, '');
+    // Remove any 'git+' prefix
+    url = url.replace(/^git\+/, '');
   
+    // Remove any trailing '.git'
+    url = url.replace(/\.git$/, '');
+  
+    // Convert SSH URLs to HTTPS
     if (url.startsWith('git@')) {
-        url = url.replace('git@', 'https://').replace(':', '/');
+      url = url.replace('git@', 'https://').replace(':', '/');
     }
   
+    // Convert 'git://' URLs to 'https://'
     if (url.startsWith('git://')) {
-        url = url.replace('git://', 'https://');
+      url = url.replace('git://', 'https://');
+    }
+  
+    // Ensure the URL starts with 'https://' or 'http://'
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = `https://${url}`;
     }
   
     return url;
+  }
+  
+  private isGitHubUrl(url: string): boolean {
+    // Checks if the URL is a GitHub repository URL
+    return /^https?:\/\/(www\.)?github\.com\/[^\/]+\/[^\/]+/i.test(url);
   }
   
   private async getRepoMetrics(owner: string, repo: string, row: RowInfo) {
@@ -510,7 +686,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
     }
     
     await this.getClosedIssues(owner, repo);
-    await this.checkLicense(row.url);
+    await this.checkLicense(owner, repo);
     console.log(this.commitsMap);
     database.updateEntry(
         this._db,
@@ -525,6 +701,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
   async main(id: number) {
     //can use any url
     const rows: RowInfo[] = this._db.prepare(`SELECT * FROM package_scores WHERE id = ?`).all(id) as RowInfo[];
+    
     console.log("pog1");
     const { owner, repo } = await this.getOwnerAndRepo(rows[0].url);
     console.log("pog2");
