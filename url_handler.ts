@@ -750,6 +750,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
     //can use any url
     const rows: RowInfo[] = this._db.prepare(`SELECT * FROM package_scores WHERE id = ?`).all(id) as RowInfo[];
     const { owner, repo } = await this.getOwnerAndRepo(rows[0].url);
+    console.log(`Owner: ${owner}, Repo: ${repo}`);
     await this.getRepoMetrics(owner, repo, rows[0]);
     this.emit('done', id);
   }
