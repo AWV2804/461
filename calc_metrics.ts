@@ -205,7 +205,6 @@ export class Metrics extends EventEmitter {
         /**
          * Calculates the metrics for each package sequentially, then stores the results in the database.
          **/ 
-        console.log("hi");
         this._info.forEach((value, key) => {
             if (value) {
                 const metrics = new Map<string, number>();
@@ -251,9 +250,10 @@ export class Metrics extends EventEmitter {
         const rows = this._db.prepare(`SELECT * FROM package_scores WHERE id = ?`).all(index);
         // const x = rows.all();
         
-        rows.forEach((row: RowInfo) => {
+        rows.forEach((row: unknown) => {
             // console.log(row);
-            this._calc_callback(row);
+            const typedRow = row as RowInfo;
+            this._calc_callback(typedRow);
         });
         // await this._db.each<RowInfo>(`SELECT * FROM package_scores`, this._calc_callback.bind(this));
         this._calculateMetrics(); // calculate the metrics

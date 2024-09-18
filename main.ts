@@ -9,11 +9,13 @@ import { UrlHandler } from './url_handler'
 
 import fs from 'fs'
 
-const manager = new Manager();
+
 const logfile = process.env.LOG_FILE as string;
 const logLvl = process.env.LOG_LEVEL as string;
 
+// console.log("hello "+ process.env.GITHUB_TOKEN+logfile);
 const fp = fs.openSync(logfile, 'w');
+const manager = new Manager(fp, +logLvl);
 manager.registerCommand('process', 'Process a file of URLs for scoring', (args) => {
     if (args.file) {
         const filePath = args.file;
@@ -22,12 +24,19 @@ manager.registerCommand('process', 'Process a file of URLs for scoring', (args) 
         const lines = data.split('\n');
         const db = database.createConnection(fp, +logLvl);
         const metric_calc = new Metrics(db, fp, +logLvl);
+        if(+logLvl == 2) { 
+            fs.writeFileSync(fp, `${lines.length}\n`);
+        }
         // console.log(lines.length);
         const output_metrics = new OutputMetrics(db, lines.length, fp, +logLvl);
         const urlHandler = new UrlHandler(db, fp, +logLvl);
         const controller = new Controller(manager, metric_calc, output_metrics, urlHandler, fp, +logLvl);
         database.createTable(db, fp, +logLvl);
+        
         lines.forEach((line: string, index: number) => {
+            if(+logLvl == 2) {
+                fs.writeFileSync(fp, `${line}\n`);
+            }
             // console.log(line);
             database.addEntry(db, line, fp, +logLvl);
             manager.emit('startProcessing', index+1)
@@ -35,8 +44,8 @@ manager.registerCommand('process', 'Process a file of URLs for scoring', (args) 
         
         // metric_calc.calc();
         // database.closeConnection(db);
-        
     } else {
+        fs.closeSync(fp);
         console.error('No file specified.');
         process.exit(1);
     }
@@ -55,6 +64,7 @@ manager.registerCommand('test', 'Test suite', () => {
         }
 
         console.log(`npx jest output: ${stdout}`);
+        // console.log("HELLO");
     });
 });
 

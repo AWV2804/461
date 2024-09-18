@@ -324,7 +324,8 @@ class UrlHandler extends stream_1.EventEmitter {
             return null;
         }
         catch (error) {
-            throw new Error(`Error fetching npm package data: ${error.message}`);
+            const newErr = error;
+            throw new Error(`Error fetching npm package data: ${newErr.message}`);
         }
     }
     extractRepositoryUrl(repository) {

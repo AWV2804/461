@@ -379,7 +379,8 @@ export class UrlHandler extends EventEmitter {
         // Repository URL not found
         return null;
     } catch (error) {
-        throw new Error(`Error fetching npm package data: ${error.message}`);
+        const newErr = error as Error;
+        throw new Error(`Error fetching npm package data: ${newErr.message}`);
     }
   }
   
