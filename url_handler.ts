@@ -199,7 +199,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
           // console.log(`Total downloads for ${packageName}:`, downloads);
           return downloads;
       } catch (error) {
-          console.log(`Error fetching downloads for package ${packageName}:`, error);
+            console.error(`Error fetching downloads for package ${packageName}:`, error);
           process.exit(1);
       }
   }
@@ -672,6 +672,53 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
     return /^https?:\/\/(www\.)?github\.com\/[^\/]+\/[^\/]+/i.test(url);
   }
   
+  private async getOpenedIssues(owner: string, repo: string) {
+    const now = new Date();
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(now.getFullYear() - 1);
+  
+    const perPage = 100;
+    let page = 1;
+    let issuesOpened: Issue[] = [];
+    let hasMore = true;
+    const oneYearAgoISO = oneYearAgo.toISOString().split('T')[0]; // YYYY-MM-DD
+  
+    // Fetch issues opened within the last year using the Search API
+    while (hasMore) {
+      const params = {
+        q: `repo:${owner}/${repo} is:issue created:>=${oneYearAgoISO}`,
+        per_page: perPage,
+        page: page,
+      };
+  
+      const url = `${this.baseURL}/search/issues`;
+  
+      try {
+        const response = await this.baseGet(url, this.token, params);
+        const data = response.data;
+  
+        const issues = data.items;
+        if (issues.length === 0) {
+          hasMore = false;
+        } else {
+          issuesOpened = issuesOpened.concat(issues);
+          page++;
+          // Check if we've reached the last page
+          const totalCount = data.total_count;
+          if (issuesOpened.length >= totalCount) {
+            hasMore = false;
+          }
+        }
+      } catch (error: any) {
+        console.error('Error fetching opened issues from GitHub API:', error.message);
+        break;
+      }
+    }
+  
+    // Store the total number of issues opened in the past year
+    this.commitsMap.set('issuesOpenedYr', issuesOpened.length);
+  }
+
   private async getRepoMetrics(owner: string, repo: string, row: RowInfo) {
     await this.getTopContributors(owner, repo);
     await this.getCommitsPastYear(owner, repo);
@@ -687,6 +734,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
     
     await this.getClosedIssues(owner, repo);
     await this.checkLicense(owner, repo);
+    await this.getOpenedIssues(owner, repo);
     console.log(this.commitsMap);
     database.updateEntry(
         this._db,
@@ -701,10 +749,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
   async main(id: number) {
     //can use any url
     const rows: RowInfo[] = this._db.prepare(`SELECT * FROM package_scores WHERE id = ?`).all(id) as RowInfo[];
-    
-    console.log("pog1");
     const { owner, repo } = await this.getOwnerAndRepo(rows[0].url);
-    console.log("pog2");
     await this.getRepoMetrics(owner, repo, rows[0]);
     this.emit('done', id);
   }
