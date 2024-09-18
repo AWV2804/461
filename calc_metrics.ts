@@ -74,7 +74,7 @@ export class Metrics extends EventEmitter {
          */
         const top3 = packInfo.get('top3');
         const commits = packInfo.get('commits/yr');
-        if (commits != undefined && top3) {
+        if (commits != undefined && top3 != undefined) {
             if (commits == 0) { // if there are no commits in the past year, bus factor is 0?
                 metrics.set('BusFactor', 0); 
                 return 0;
@@ -100,20 +100,16 @@ export class Metrics extends EventEmitter {
          * Outputs:
          * - None
          */
-        // const resolved = packInfo.get('resolved');
-        const issues = packInfo.get('issues/yr');
-        // if (resolved != undefined && issues != undefined) {
-        if (issues != undefined) {
+        const resolved = packInfo.get('issuesClosedYr');
+        const issues = packInfo.get('issuesOpenedYr');
+        if (resolved != undefined && issues != undefined) {
             if (issues == 0) { 
                 metrics.set('Correctness', 1); // if there are no issues, correctness is 1?
                 return 1;
             }
-            // const correctness = resolved / issues;
-            // metrics.set('correctness', correctness);
-            metrics.set('Correctness', 1);
-
-            // return correctness;
-            return 1;
+            const correctness = resolved / issues;
+            metrics.set('correctness', correctness);
+            return correctness;
         } else {
             console.error('Error calculating correctness: resolved issues or total issues not found');
             process.exit(1);
@@ -173,7 +169,7 @@ export class Metrics extends EventEmitter {
         const iss7 = packInfo.get('iss7');
         const iss14 = packInfo.get('iss14');
         const iss31 = packInfo.get('iss31');
-        const issues = packInfo.get('issues/yr');
+        const issues = packInfo.get('issuesOpenedYr');
         if (iss3 != undefined && iss7 != undefined && iss14 != undefined && iss31 != undefined && issues != undefined) {
             if (issues == 0){
                 metrics.set('ResponsiveMaintainer', 1); // if there are no issues, responsiveness is 1?
@@ -231,7 +227,7 @@ export class Metrics extends EventEmitter {
                 const response = this._responsiveness(value, metrics);
                 const before_license = now();
                 metrics.set("ResponsiveMaintainer_Latency", before_license - before_response);
-                // const license = value.get('license');
+                // const license = value.get('License');
                 const license = 1;
                 const before_net = now();
                 metrics.set('License_Latency', before_net - before_license);
