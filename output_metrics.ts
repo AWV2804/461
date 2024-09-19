@@ -2,6 +2,7 @@ import * as database from './database';
 import Database from 'better-sqlite3';
 import { RowInfo } from './calc_metrics';
 import { EventEmitter  } from 'stream';
+import { fstat } from 'fs';
 
 export class OutputMetrics extends EventEmitter {
     private _db: Database.Database;
@@ -48,6 +49,7 @@ export class OutputMetrics extends EventEmitter {
             }
         } catch (err) {
             console.error('Error retrieving data from the database:', err);
+            process.exit(1);
         }
     //     } finally {
     //         // Close the database connection
