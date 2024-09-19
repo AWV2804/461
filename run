@@ -1,5 +1,6 @@
 #!/bin/bash
-
+export LOG_FILE=logfile.txt
+export LOG_LEVEL=2
 # Check if TypeScript is installed
 if ! command -v tsc &> /dev/null; then
     echo "TypeScript is not installed. Please install it first."
@@ -8,10 +9,6 @@ fi
 # rm metrics.db
 # Compile TypeScript files
 # echo "Compiling TypeScript..."
-
-export GITHUB_TOKEN=
-export LOG_FILE=logfile.txt
-export LOG_LEVEL=1
 
 # echo $LOG_FILE
 # echo $LOG_LEVEL
@@ -26,7 +23,7 @@ elif [ "$1" == "test" ]; then
     # echo "Here"
     tsc
 else
-    echo "Usage: ./run install or ./run URL_FILE or ./run test"
+    # echo "Usage: ./run install or ./run URL_FILE or ./run test"
     # node main.js $1
     exit 1
 fi

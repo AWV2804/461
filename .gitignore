@@ -11,3 +11,20 @@ node_modules/
 
 #Other IDE stuff
 .DS_Store
+
+#Logging stuff
+*.txt
+
+#database stuff
+*.db
+
+#json stuff
+*.json
+
+#env stuff
+*.env
+
+SampleCLICommandsAndStdout.md
+URL_FILE
+token
+coverage/

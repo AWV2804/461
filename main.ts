@@ -13,7 +13,6 @@ import fs from 'fs'
 const logfile = process.env.LOG_FILE as string;
 const logLvl = process.env.LOG_LEVEL as string;
 
-// console.log("hello "+ process.env.GITHUB_TOKEN+logfile);
 const fp = fs.openSync(logfile, 'w');
 const manager = new Manager(fp, +logLvl);
 manager.registerCommand('process', 'Process a file of URLs for scoring', (args) => {
@@ -27,7 +26,6 @@ manager.registerCommand('process', 'Process a file of URLs for scoring', (args) 
         if(+logLvl == 2) { 
             fs.writeFileSync(fp, `${lines.length}\n`);
         }
-        // console.log(lines.length);
         const output_metrics = new OutputMetrics(db, lines.length, fp, +logLvl);
         const urlHandler = new UrlHandler(db, fp, +logLvl);
         const controller = new Controller(manager, metric_calc, output_metrics, urlHandler, fp, +logLvl);
@@ -37,13 +35,10 @@ manager.registerCommand('process', 'Process a file of URLs for scoring', (args) 
             if(+logLvl == 2) {
                 fs.writeFileSync(fp, `${line}\n`);
             }
-            // console.log(line);
             database.addEntry(db, line, fp, +logLvl);
             manager.emit('startProcessing', index+1)
         });
         
-        // metric_calc.calc();
-        // database.closeConnection(db);
     } else {
         fs.closeSync(fp);
         console.error('No file specified.');
