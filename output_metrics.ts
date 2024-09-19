@@ -27,7 +27,7 @@ export class OutputMetrics extends EventEmitter {
                 rows.forEach((row: unknown) => {
                     const typedRow = row as RowInfo;
                     const metrics = JSON.parse(typedRow.metrics || '{}'); // Parse metrics if it's a JSON string
-    
+                    
                     // Format latency values to three decimal places
                     const formattedMetrics = {
                         ...metrics,
@@ -41,7 +41,8 @@ export class OutputMetrics extends EventEmitter {
                         Correctness: metrics.Correctness?.toFixed(3),
                         RampUp: metrics.RampUp?.toFixed(3),
                         ResponsiveMaintainer: metrics.ResponsiveMaintainer?.toFixed(3),
-                        NetScore: metrics.NetScore?.toFixed(3)
+                        NetScore: metrics.NetScore?.toFixed(3),
+                        
                     };
                     const output = {
                         URL: typedRow.url,

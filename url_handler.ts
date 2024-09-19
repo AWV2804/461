@@ -350,7 +350,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
       });
       defaultBranch = response.data.default_branch || 'main';
       if(this.logLvl == 2) fs.writeFileSync(this.fp, `Default branch for ${owner}/${repo} is ${defaultBranch}\n`);
-    } catch (error) {
+    } catch (error:any) {
       console.error('Error fetching repository data from GitHub API:', error.message);
       if(this.logLvl == 2) fs.writeFileSync(this.fp, 'falling back to default branch main\n');
     }
@@ -425,7 +425,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
                   if(this.logLvl == 2) fs.writeFileSync(this.fp, `License information found in package.json: ${fullPath}\n`);
                   return; // Exit function
                 }
-              } catch (err) {
+              } catch (err:any) {
                 console.error(`Error parsing package.json: ${err.message}`);
               }
             }
@@ -471,12 +471,12 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
       // Set result to 1 if a license is found, otherwise 0
       const result = licenseExists ? 1 : 0;
       if(this.logLvl == 1) fs.writeFileSync(this.fp, `License exists: ${licenseExists}, result: ${result}\n`);
-      this.commitsMap.set('license', result);
+      this.commitsMap.set('License', result);
   
-    } catch (error) {
+    } catch (error:any) {
       console.error('Error during cloning or license checking:', error.message);
       // Set license to 0 in case of error
-      this.commitsMap.set('license', 0);
+      this.commitsMap.set('License', 0);
     } finally {
       // Clean up the temporary directory
       if (fs.existsSync(dir)) {

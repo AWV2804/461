@@ -27,3 +27,4 @@ node_modules/
 SampleCLICommandsAndStdout.md
 URL_FILE
 token
+coverage/

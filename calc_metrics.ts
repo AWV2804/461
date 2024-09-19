@@ -108,7 +108,7 @@ export class Metrics extends EventEmitter {
                 return 1;
             }
             const correctness = resolved / issues;
-            metrics.set('correctness', correctness);
+            metrics.set('Correctness', correctness);
             return correctness;
         } else {
             console.error('Error calculating correctness: resolved issues or total issues not found');
@@ -227,9 +227,9 @@ export class Metrics extends EventEmitter {
                 const response = this._responsiveness(value, metrics);
                 const before_license = now();
                 metrics.set("ResponsiveMaintainer_Latency", before_license - before_response);
-                // const license = value.get('License');
-                const license = 1;
+                const license = value.get('License');
                 const before_net = now();
+                metrics.set('License', license ? license : 0);
                 metrics.set('License_Latency', before_net - before_license);
                 const net = this._netScore(bus, correct, ramp, response, license ? license : 0);
                 metrics.set('NetScore', net);
@@ -258,9 +258,9 @@ export class Metrics extends EventEmitter {
         const rows = this._db.prepare(`SELECT * FROM package_scores WHERE id = ?`).all(index);
         // const x = rows.all();
         
-        rows.forEach((row: RowInfo) => {
+        rows.forEach((row: unknown) => {
             if (this.loglvl == 2) fs.writeFileSync(this.fp, JSON.stringify(row));
-            this._calc_callback(row);
+            this._calc_callback(row as RowInfo);
         });
         // await this._db.each<RowInfo>(`SELECT * FROM package_scores`, this._calc_callback.bind(this));
         this._calculateMetrics(); // calculate the metrics
