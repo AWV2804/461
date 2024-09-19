@@ -9,8 +9,13 @@ interface CommandAction {
 export class Manager extends EventEmitter {
     private program: Command;
     private commands: {[key: string]: CommandAction}
-    constructor() {
+    private fp: number;
+    private loglvl: number;
+
+    constructor(fp: number, loglvl: number) {
         super();
+        this.fp = fp;
+        this.loglvl = loglvl;
         this.commands = {};
         this.program = new Command();
         this.program

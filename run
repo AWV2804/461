@@ -10,7 +10,6 @@ fi
 # Compile TypeScript files
 # echo "Compiling TypeScript..."
 
-
 # echo $LOG_FILE
 # echo $LOG_LEVEL
 if [ "$1" == "install" ]; then
@@ -24,7 +23,7 @@ elif [ "$1" == "test" ]; then
     # echo "Here"
     tsc
 else
-    $ echo "Usage: ./run install or ./run URL_FILE or ./run test"
+    # echo "Usage: ./run install or ./run URL_FILE or ./run test"
     # node main.js $1
     exit 1
 fi
