@@ -41,6 +41,7 @@ export class OutputMetrics extends EventEmitter {
                         Correctness: metrics.Correctness?.toFixed(3),
                         RampUp: metrics.RampUp?.toFixed(3),
                         ResponsiveMaintainer: metrics.ResponsiveMaintainer?.toFixed(3),
+                        NetScore: metrics.NetScore?.toFixed(3)
                     };
                     const output = {
                         URL: typedRow.url,
