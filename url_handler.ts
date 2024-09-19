@@ -329,7 +329,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
   
   private async checkLicense(owner: string, repo: string): Promise<void> {
     const repoUrl = `https://github.com/${owner}/${repo}.git`;
-    console.log(`Cloning repository from ${repoUrl}...`);
+    if(this.logLvl == 1) fs.writeFileSync(this.fp.toString(), `Cloning repository from ${repoUrl}...\n`, {flag: 'a'});
   
     // Create a unique temporary directory for each repository
     const dir = path.join(__dirname, `temp-repo-${owner}-${repo}-${Date.now()}`);
@@ -349,10 +349,10 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
         },
       });
       defaultBranch = response.data.default_branch || 'main';
-      console.log(`Default branch for ${owner}/${repo} is ${defaultBranch}`);
+      if(this.logLvl == 2) fs.writeFileSync(this.fp.toString(), `Default branch for ${owner}/${repo} is ${defaultBranch}\n`, {flag: 'a'});
     } catch (error) {
       console.error('Error fetching repository data from GitHub API:', error.message);
-      console.log(`Falling back to default branch: ${defaultBranch}`);
+      if(this.logLvl == 2) fs.writeFileSync(this.fp.toString(), 'falling back to default branch main\n', {flag: 'a'});
     }
   
     try {
@@ -366,7 +366,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
         depth: 1,
         ref: defaultBranch,
       });
-      console.log(`Repository cloned successfully to ${dir}`);
+      if(this.logLvl == 1) fs.writeFileSync(this.fp.toString(), `Repository cloned successfully to ${dir}\n`, {flag: 'a'});
   
       // Possible license file names (case-insensitive)
       const licenseFiles = [
@@ -401,28 +401,28 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
             // Check for license files
             if (licenseFiles.includes(upperName) && stats.size > 0) {
               licenseExists = true;
-              console.log(`License file found: ${fullPath}`);
+              if(this.logLvl == 2) fs.writeFileSync(this.fp.toString(), `License file found: ${fullPath}\n`, {flag: 'a'});
               return; // Exit function
             }
             // Check for README files
             else if (readmeFiles.includes(upperName) && stats.size > 0) {
-              console.log(`README file found: ${fullPath}`);
+              if(this.logLvl == 2) fs.writeFileSync(this.fp.toString(), `README file found: ${fullPath}\n`, {flag: 'a'});
               const content = fs.readFileSync(fullPath, 'utf8');
               if (searchReadmeForLicense(content)) {
                 licenseExists = true;
-                console.log(`License information found in README: ${fullPath}`);
+                if(this.logLvl == 2) fs.writeFileSync(this.fp.toString(), `License information found in README: ${fullPath}\n`, {flag: 'a'});
                 return; // Exit function
               }
             }
             // Check for package.json
             else if (name.toLowerCase() === 'package.json' && stats.size > 0) {
-              console.log(`package.json file found: ${fullPath}`);
+              if(this.logLvl == 2) fs.writeFileSync(this.fp.toString(), `package.json file found: ${fullPath}\n`, {flag: 'a'});
               const content = fs.readFileSync(fullPath, 'utf8');
               try {
                 const packageJson = JSON.parse(content);
                 if (packageJson.license) {
                   licenseExists = true;
-                  console.log(`License information found in package.json: ${fullPath}`);
+                  if(this.logLvl == 2) fs.writeFileSync(this.fp.toString(), `License information found in package.json: ${fullPath}\n`, {flag: 'a'});
                   return; // Exit function
                 }
               } catch (err) {
@@ -470,7 +470,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
   
       // Set result to 1 if a license is found, otherwise 0
       const result = licenseExists ? 1 : 0;
-      console.log(`License exists: ${licenseExists}, result: ${result}`);
+      if(this.logLvl == 1) fs.writeFileSync(this.fp.toString(), `License exists: ${licenseExists}, result: ${result}\n`, {flag: 'a'});
       this.commitsMap.set('license', result);
   
     } catch (error) {
@@ -481,7 +481,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
       // Clean up the temporary directory
       if (fs.existsSync(dir)) {
         fs.rmSync(dir, { recursive: true, force: true });
-        console.log(`Removed temporary directory: ${dir}`);
+        if(this.logLvl == 1) fs.writeFileSync(this.fp.toString(), `Removed temporary directory: ${dir}\n`, {flag: 'a'});
       }
     }
   }
@@ -529,7 +529,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
   }
   
   private extractOwnerRepoFromGitHubUrl(urlString: string): OwnerRepo | null {
-    console.log(`Extracting owner and repo from URL: ${urlString}`);
+    if(this.logLvl == 2) fs.writeFileSync(this.fp.toString(), `Extracting owner and repo from URL: ${urlString}\n`, {flag: 'a'});
   
     try {
       const url = new URL(urlString);
@@ -538,7 +538,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
       if (pathParts.length >= 2) {
         const owner = pathParts[0];
         const repo = pathParts[1];
-        console.log(`Extracted owner: "${owner}", repo: "${repo}"`);
+        if(this.logLvl == 2) fs.writeFileSync(this.fp.toString(), `Extracted owner: "${owner}", repo: "${repo}"\n`, {flag: 'a'});
         return { owner, repo };
       }
     } catch (error) {
@@ -728,14 +728,15 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
     if (packageName) {
         await this.getTotalDownloads(packageName, 'last-year');
     } else {
-        console.log('Package name not found in package.json.');
+        if(this.logLvl == 2) fs.writeFileSync(this.fp.toString(), 'Package name not found in package.json.\n', {flag: 'a'});
         this.commitsMap.set('downloads', 0); // Set downloads to 0 if package name not found
     }
     
     await this.getClosedIssues(owner, repo);
     await this.checkLicense(owner, repo);
     await this.getOpenedIssues(owner, repo);
-    console.log(this.commitsMap);
+    if(this.logLvl == 1)fs.writeFileSync(this.fp.toString(), 'Metrics values finished.\n', {flag: 'a'});
+    if(this.logLvl == 2) fs.writeFileSync(this.fp, JSON.stringify(Object.fromEntries(this.commitsMap)), {flag: 'a'});
     database.updateEntry(
         this._db,
         row.url,
@@ -750,7 +751,6 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
     //can use any url
     const rows: RowInfo[] = this._db.prepare(`SELECT * FROM package_scores WHERE id = ?`).all(id) as RowInfo[];
     const { owner, repo } = await this.getOwnerAndRepo(rows[0].url);
-    console.log(`Owner: ${owner}, Repo: ${repo}`);
     await this.getRepoMetrics(owner, repo, rows[0]);
     this.emit('done', id);
   }
