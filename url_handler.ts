@@ -351,6 +351,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
       defaultBranch = response.data.default_branch || 'main';
       if(this.logLvl == 2) fs.writeFileSync(this.fp, `Default branch for ${owner}/${repo} is ${defaultBranch}\n`);
     } catch (error:any) {
+
       console.error('Error fetching repository data from GitHub API:', error.message);
       if(this.logLvl == 2) fs.writeFileSync(this.fp, 'falling back to default branch main\n');
     }
@@ -472,6 +473,7 @@ private async getPackageNameFromGitHub(owner: string, repo: string): Promise<str
       const result = licenseExists ? 1 : 0;
       if(this.logLvl == 1) fs.writeFileSync(this.fp, `License exists: ${licenseExists}, result: ${result}\n`);
       this.commitsMap.set('License', result);
+
   
     } catch (error:any) {
       console.error('Error during cloning or license checking:', error.message);
