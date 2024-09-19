@@ -50,7 +50,7 @@ export function closeConnection(db: Database.Database, fp: number, loglvl: numbe
 //             if (err) {
 //                 console.error('Could not create table', err);
 //             } else {
-//                 console.log('Table created successfully.');
+//                 // console.log('Table created successfully.');
 //             }
 //         });
 //     });
@@ -63,7 +63,7 @@ export function closeConnection(db: Database.Database, fp: number, loglvl: numbe
 //         if(err) {
 //             console.error('Error inserting into table', err);
 //         } else {
-//             console.log('Inserted data into table.')
+//             // console.log('Inserted data into table.')
 //         }
 //     });
 // }
@@ -75,7 +75,7 @@ export function closeConnection(db: Database.Database, fp: number, loglvl: numbe
 //         if(err) {
 //             console.error('Error updating table', err);
 //         } else {
-//             console.log('Updated table.')
+//             // console.log('Updated table.')
 //         }
 //     });
 // }
@@ -85,7 +85,7 @@ export function closeConnection(db: Database.Database, fp: number, loglvl: numbe
 //         if (err) {
 //             console.error('Could not close the database connection', err);
 //         } else {
-//             console.log('Database connection closed.');
+//             // console.log('Database connection closed.');
 //         }
 //     });
 // }
