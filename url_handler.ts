@@ -89,7 +89,7 @@ export class UrlHandler extends EventEmitter {
   }
 
 
-  private async getTopContributors(owner: string, repo: string) {
+  async getTopContributors(owner: string, repo: string) {
     /**
      * Fetches the top 3 contributors to a GitHub repository and calculates the total number of commits and stores it in the commitsMap.
      * inputs: github owner, github repo
@@ -175,7 +175,7 @@ export class UrlHandler extends EventEmitter {
     return null;
   }
 
-  private async getCommitsPastYear(owner: string, repo: string) {
+  async getCommitsPastYear(owner: string, repo: string) {
     /**
      * Fetches the total number of commits in the past year for a GitHub repository and stores it in the commitsMap.
      * inputs: github owner, github repo
