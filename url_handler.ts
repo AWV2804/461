@@ -823,7 +823,7 @@ export class UrlHandler extends EventEmitter {
      * output: none
      * */
     //can use any url
-    const rows: RowInfo[] = this._db.prepare(`SELECT * FROM package_scores WHERE id = ?`).all(id) as RowInfo[];
+    const rows: RowInfo[] = this._db.prepare(`SELECT * ROM package_scores WHERE id = ?`).all(id) as RowInfo[];
     const { owner, repo } = await this.getOwnerAndRepo(rows[0].url);
     await this.getRepoMetrics(owner, repo, rows[0]);
     this.emit('done', id);
