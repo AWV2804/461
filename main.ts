@@ -35,8 +35,11 @@ manager.registerCommand('process', 'Process a file of URLs for scoring', (args) 
             if(+logLvl == 2) {
                 fs.writeFileSync(fp, `${line}\n`);
             }
-            database.addEntry(db, line, fp, +logLvl);
-            manager.emit('startProcessing', index+1)
+            if(line != "") {
+                database.addEntry(db, line, fp, +logLvl);
+                manager.emit('startProcessing', index+1)
+            }
+            
         });
         
     } else {
