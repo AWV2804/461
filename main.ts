@@ -5,14 +5,15 @@ import * as database from './database'
 import { Controller } from './controller'
 import { OutputMetrics } from './output_metrics'
 import { UrlHandler } from './url_handler'
-// import git from 'isomorphic-git'
-
 import fs from 'fs'
 
 
+
+// Getting environment variables for logfile and logLvl
 const logfile = process.env.LOG_FILE as string;
 let logLvl = process.env.LOG_LEVEL as string;
 
+// Check if the logfile is given and if there is a GITHUB_TOKEN. Exiting and writing an error message if they don't exist
 if(logfile == "") {
     console.error("No logfile given");
     process.exit(1);
@@ -21,27 +22,46 @@ if(process.env.GITHUB_TOKEN as string == "") {
     console.error("No github token given");
     process.exit(1);
 }
+
+// If logLvl wasn't set, it is set to 0 by default
 if(logLvl == "") {
     logLvl = "0";
 }
+
+// Opening logfile
 const fp = fs.openSync(logfile, 'w');
+
+// Creating new manager class to run the program
 const manager = new Manager(fp, +logLvl);
+
+// Registering process command that takes a file and begins the scoring process for the urls
 manager.registerCommand('process', 'Process a file of URLs for scoring', (args) => {
     if (args.file) {
         const filePath = args.file;
         const data = fs.readFileSync(filePath, 'utf8');
 
+        // Split url file into array of urls
         const lines = data.split('\n');
+        // New connection
         const db = database.createConnection(fp, +logLvl);
+
+        // New calculator
         const metric_calc = new Metrics(db, fp, +logLvl);
         if(+logLvl == 2) { 
             fs.writeFileSync(fp, `${lines.length}\n`);
         }
+        
+        // New outputter
         const output_metrics = new OutputMetrics(db, lines.length, fp, +logLvl);
+
+        // New url handler
         const urlHandler = new UrlHandler(db, fp, +logLvl);
+
+        // New controller for concurrency
         const controller = new Controller(manager, metric_calc, output_metrics, urlHandler, fp, +logLvl);
         database.createTable(db, fp, +logLvl);
         
+        // For each url, add it to the database and then using events, begin the process
         lines.forEach((line: string, index: number) => {
             if(+logLvl == 2) {
                 fs.writeFileSync(fp, `${line}\n`);
@@ -62,6 +82,7 @@ manager.registerCommand('process', 'Process a file of URLs for scoring', (args) 
     
 });
 
+// Register command for when test is invoked. Runs test suite using jest and outputs to stdout based on requested format
 manager.registerCommand('test', 'Test suite', () => {
     exec('npx jest --silent --coverage --detectOpenHandles > jest-output.txt 2>&1', (error, stderr, stdout) => {
         // Read the Jest output from the file
@@ -98,4 +119,5 @@ manager.registerCommand('test', 'Test suite', () => {
     });
 });
 
+// Executes either test or process and if neither are somehow called, it will print the available commands
 manager.execute(process.argv);

@@ -7,6 +7,9 @@ import * as database from './database'
 import Database from 'better-sqlite3'
 import fs from 'fs'
 
+/**
+ * Class to set up and control the event-driven concurrency aspect of the CLI
+ */
 export class Controller extends EventEmitter {
     private manger: manager.Manager;
     private metrics: cm.Metrics;
@@ -16,6 +19,21 @@ export class Controller extends EventEmitter {
     private loglvl: number;
 
     constructor(manger: manager.Manager, metrics: cm.Metrics, outputMetrics: om.OutputMetrics, urlHandler: url_handler.UrlHandler, fp: number, loglvl: number) {
+        /**
+         * Constructor for the class
+         * Runs the setupListeners() function to control the Event-driven concurrency
+         * 
+         * Inputs:
+         * - manger: manager.Manager - Manager class created in main.ts
+         * - metrics: cm.Metrics - Metrics class created in main.ts
+         * - outputMetrics: om.OutputMetrics - OutputMetrics class created in main.ts
+         * - urlHandler: url_handler.UrlHandler - UrlHandler class created in main.ts
+         * - fp: number - logfile pointer if logging wanted to be added
+         * - loglvl: number - log level set by user for specific level of logging wanted
+         * 
+         * Outputs:
+         * - Controller class
+         */
         super();
         this.manger = manger;
         this.metrics = metrics;
@@ -27,6 +45,17 @@ export class Controller extends EventEmitter {
     }
 
     private setupListeners() {
+        /**
+         * Function that sets up the Event-driven Concurrency
+         * How it works:
+         *  - When one of the other class emits the phrase that matches the .on() it has, then the arrow-function is called and executed
+         * 
+         * Inputs: 
+         * - None
+         * 
+         * Outputs:
+         * - None
+         */
         this.manger.on('startProcessing', (index: number) => {
             if(this.loglvl == 1 || this.loglvl == 2) {
                 fs.writeFileSync(this.fp, `Processing link in db at index: ${index}\n`); // console.log(`Processing link in db at index: ${index}`);
