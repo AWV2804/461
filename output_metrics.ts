@@ -4,12 +4,20 @@ import { RowInfo } from './calc_metrics';
 import { EventEmitter  } from 'stream';
 import { fstat } from 'fs';
 
+/**
+ * Class representing output metrics functionality.
+ * @extends EventEmitter
+ */
 export class OutputMetrics extends EventEmitter {
     private _db: Database.Database;
     private fileNum: number;
     private fp: number;
-    private loglvl: number
+    private loglvl: number;
 
+    /**
+     * Create an OutputMetrics object.
+     * Given a database, file number, file pointer, and log level, create an OutputMetrics object.
+     */
     constructor(db: Database.Database, fileNum: number, fp: number, loglvl: number) {
         super();
         this._db = db;
@@ -19,6 +27,10 @@ export class OutputMetrics extends EventEmitter {
     }
 
     output_Metrics(index: number): void {
+        /**
+         * Retrieve metrics from the database and output them to stdout.
+         * Input: index - the index of the package to retrieve metrics for
+         */
         try {
             const rows = this._db.prepare('SELECT * FROM package_scores WHERE id = ?').all(index);
     
@@ -31,17 +43,17 @@ export class OutputMetrics extends EventEmitter {
                     // Format latency values to three decimal places
                     const formattedMetrics = {
                         ...metrics,
-                        BusFactor_Latency: metrics.BusFactor_Latency?.toFixed(3),
-                        Correctness_Latency: metrics.Correctness_Latency?.toFixed(3),
-                        RampUp_Latency: metrics.RampUp_Latency?.toFixed(3),
-                        ResponsiveMaintainer_Latency: metrics.ResponsiveMaintainer_Latency?.toFixed(3),
-                        License_Latency: metrics.License_Latency?.toFixed(3),
-                        NetScore_Latency: metrics.NetScore_Latency?.toFixed(3),
-                        BusFactor: metrics.BusFactor?.toFixed(3),
-                        Correctness: metrics.Correctness?.toFixed(3),
-                        RampUp: metrics.RampUp?.toFixed(3),
-                        ResponsiveMaintainer: metrics.ResponsiveMaintainer?.toFixed(3),
-                        NetScore: metrics.NetScore?.toFixed(3),
+                        BusFactor_Latency: parseFloat(metrics.BusFactor_Latency?.toFixed(3)),
+                        Correctness_Latency: parseFloat(metrics.Correctness_Latency?.toFixed(3)),
+                        RampUp_Latency: parseFloat(metrics.RampUp_Latency?.toFixed(3)),
+                        ResponsiveMaintainer_Latency: parseFloat(metrics.ResponsiveMaintainer_Latency?.toFixed(3)),
+                        License_Latency: parseFloat(metrics.License_Latency?.toFixed(3)),
+                        NetScore_Latency: parseFloat(metrics.NetScore_Latency?.toFixed(3)),
+                        BusFactor: parseFloat(metrics.BusFactor?.toFixed(3)),
+                        Correctness: parseFloat(metrics.Correctness?.toFixed(3)),
+                        RampUp: parseFloat(metrics.RampUp?.toFixed(3)),
+                        ResponsiveMaintainer: parseFloat(metrics.ResponsiveMaintainer?.toFixed(3)),
+                        NetScore: parseFloat(metrics.NetScore?.toFixed(3)),
                         
                     };
                     const output = {

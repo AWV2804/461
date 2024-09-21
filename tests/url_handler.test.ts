@@ -36,7 +36,7 @@ describe('UrlHandler', () => {
     test('main should retrieve owner/repo and fetch metrics', async () => {
         const mockRow = {
             id: 1,
-            url: 'https://github.com/owner/repo',
+            url: 'https://github.com/caolan/async',
             information: null,
             metrics: null,
         };
@@ -53,7 +53,7 @@ describe('UrlHandler', () => {
 
         await urlHandler.main(1);
 
-        expect(mockGetOwnerAndRepo).toHaveBeenCalledWith('https://github.com/owner/repo');
+        expect(mockGetOwnerAndRepo).toHaveBeenCalledWith('https://github.com/caolan/async');
         expect(mockGetRepoMetrics).toHaveBeenCalledWith('owner', 'repo', mockRow);
     });
 
@@ -173,18 +173,18 @@ describe('UrlHandler', () => {
     });
     describe('getOwnerAndRepo', () => {
         it('should extract owner and repo from GitHub URL', async () => {
-            const url = 'https://github.com/owner/repo';
+            const url = 'https://github.com/caolan/async';
             const result = await urlHandler['getOwnerAndRepo'](url);
-            expect(result).toEqual({ owner: 'owner', repo: 'repo' });
+            expect(result).toEqual({ owner: 'caolan', repo: 'async' });
         });
 
         it('should extract package name from npm URL and fetch repo URL', async () => {
-            const npmUrl = 'https://www.npmjs.com/package/example-package';
-            const mockRepoUrl = 'https://github.com/owner/repo';
+            const npmUrl = 'https://www.npmjs.com/package/express';
+            const mockRepoUrl = 'https://github.com/caolan/async';
 
             jest.spyOn(urlHandler as any, 'getRepositoryUrlFromNpm').mockResolvedValue(mockRepoUrl);
             const result = await urlHandler['getOwnerAndRepo'](npmUrl);
-            expect(result).toEqual({ owner: 'owner', repo: 'repo' });
+            expect(result).toEqual({ owner: 'caolan', repo: 'async' });
         });
 
         it('should exit for invalid GitHub URL', async () => {
@@ -201,8 +201,8 @@ describe('UrlHandler', () => {
     // Test for extractOwnerRepoFromGitHubUrl
     describe('extractOwnerRepoFromGitHubUrl', () => {
         it('should extract owner and repo from valid GitHub URL', () => {
-            const result = urlHandler['extractOwnerRepoFromGitHubUrl']('https://github.com/owner/repo');
-            expect(result).toEqual({ owner: 'owner', repo: 'repo' });
+            const result = urlHandler['extractOwnerRepoFromGitHubUrl']('https://github.com/caolan/async');
+            expect(result).toEqual({ owner: 'caolan', repo: 'async' });
         });
 
         it('should return null for invalid GitHub URL', () => {
@@ -217,14 +217,14 @@ describe('UrlHandler', () => {
             const mockResponse = {
                 data: {
                     repository: {
-                        url: 'git+https://github.com/owner/repo.git'
+                        url: 'git+https://github.com/caolan/async.git'
                     }
                 }
             };
 
             (axios.get as jest.Mock).mockResolvedValue(mockResponse);
             const result = await urlHandler['getRepositoryUrlFromNpm']('example-package');
-            expect(result).toBe('https://github.com/owner/repo');
+            expect(result).toBe('https://github.com/caolan/async');
         });
 
         it('should return null if no GitHub repository URL is found in npm data', async () => {
@@ -276,7 +276,7 @@ describe('UrlHandler', () => {
         it('should fetch all metrics and update the database', async () => {
             const row: RowInfo = {
                 id: 1,
-                url: 'https://github.com/owner/repo',
+                url: 'https://github.com/caolan/async',
                 information: null,
                 metrics: null,
             };

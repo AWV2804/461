@@ -55,17 +55,17 @@ describe('OutputMetrics', () => {
 
         expect(consoleSpy).toHaveBeenCalledWith(JSON.stringify({
             URL: 'http://example.com',
-            BusFactor_Latency: '1.235',
-            Correctness_Latency: '2.346',
-            RampUp_Latency: '3.457',
-            ResponsiveMaintainer_Latency: '4.568',
-            License_Latency: '5.679',
-            NetScore_Latency: '6.789',
-            BusFactor: '7.890',
-            Correctness: '8.901',
-            RampUp: '9.012',
-            ResponsiveMaintainer: '0.123',
-            NetScore: '1.235'
+            BusFactor_Latency: 1.235,
+            Correctness_Latency: 2.346,
+            RampUp_Latency: 3.457,
+            ResponsiveMaintainer_Latency: 4.568,
+            License_Latency: 5.679,
+            NetScore_Latency: 6.789,
+            BusFactor: 7.890,
+            Correctness: 8.901,
+            RampUp: 9.012,
+            ResponsiveMaintainer: 0.123,
+            NetScore: 1.235
         }));
 
         consoleSpy.mockRestore();

@@ -11,8 +11,19 @@ import fs from 'fs'
 
 
 const logfile = process.env.LOG_FILE as string;
-const logLvl = process.env.LOG_LEVEL as string;
+let logLvl = process.env.LOG_LEVEL as string;
 
+if(logfile == "") {
+    console.error("No logfile given");
+    process.exit(1);
+}
+if(process.env.GITHUB_TOKEN as string == "") {
+    console.error("No github token given");
+    process.exit(1);
+}
+if(logLvl == "") {
+    logLvl = "0";
+}
 const fp = fs.openSync(logfile, 'w');
 const manager = new Manager(fp, +logLvl);
 manager.registerCommand('process', 'Process a file of URLs for scoring', (args) => {
@@ -82,7 +93,7 @@ manager.registerCommand('test', 'Test suite', () => {
         // Output the results in the format: "X/Y test cases passed. Z% line coverage achieved."
         console.log(`Total: ${totalTests}`);
         console.log(`Passed: ${passedTests}`);
-        console.log(`Coverage: ${lineCoverage.toFixed(0)}`);
+        console.log(`Coverage: ${lineCoverage.toFixed(0)}%`);
         console.log(`${passedTests}/${totalTests} test cases passed. ${lineCoverage.toFixed(0)}% line coverage achieved.`);
     });
 });

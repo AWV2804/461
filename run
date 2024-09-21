@@ -1,43 +1,29 @@
 #!/bin/bash
-export LOG_FILE=logfile.txt
-export LOG_LEVEL=2
 # Check if TypeScript is installed
 if ! command -v tsc &> /dev/null; then
     echo "TypeScript is not installed. Please install it first."
     exit 1
 fi
-# rm metrics.db
-# Compile TypeScript files
-# echo "Compiling TypeScript..."
 
-# echo $LOG_FILE
-# echo $LOG_LEVEL
+# Handle the "install" command (no compilation after install)
 if [ "$1" == "install" ]; then
     npm install --save better-sqlite3 commander axios dotenv isomorphic-git
     npm install --save-dev typescript @types/better-sqlite3 @types/commander @types/node@18.11.9 jest ts-jest @types/jest
-    # tsc main.ts || { echo "Compilation failed"; exit 1; }
-elif [ -f "$1" ]; then
     tsc || { echo "Compilation failed"; exit 1; }
-    # tsc
+# Handle the "test" command (just run the tests without compiling)
 elif [ "$1" == "test" ]; then
-    # echo "Here"
-    tsc
+    node main.js test || { echo "Failed to run the program with 'test'"; exit 1; }
+
+# Handle if a file is passed as an argument (just process the file without compiling)
+elif [ -f "$1" ]; then
+    node main.js process "$1" || { echo "Failed to process the file"; exit 1; }
+    rm metrics.db || { echo "Failed to remove metrics.db"; exit 1; }
+
+# Handle unknown arguments
 else
-    # echo "Usage: ./run install or ./run URL_FILE or ./run test"
-    # node main.js $1
+    echo "Usage: ./run install or ./run test or ./run URL_FILE"
     exit 1
 fi
 
-# Check the argument passed to the script
-# if [ "$1" == "install" ]; then
-#     echo "Running the program with 'install' command..."
-#     node main.js install || { echo "Failed to run the program with 'install'"; exit 1; }
-if [ "$1" == "test" ]; then
-    # echo "Testing"
-    node main.js test || { echo "Failed to run the program with 'test'"; exit 1; }
-elif [ -f "$1" ]; then
-    # echo "Processing file: $1"
-    # Run your compiled TypeScript program with the provided file as an argument
-    node main.js process "$1" || { echo "Failed to run the program"; exit 1; }
-    rm metrics.db
-fi
+# Exit with success
+exit 0
