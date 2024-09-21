@@ -7,7 +7,7 @@ Andrew Tu
 - `tsc <filename>.ts` to compile code into .js
 - `node <filename>.js` to run code
 
-# SQLite3
+# Better-SQLite3
 ### database.ts
 - Contains functions for:
     - Creating connection to database (will create it if it doesn't exist) and return that connection to you
@@ -20,6 +20,27 @@ Andrew Tu
     - Closing connection
         - Do this at the end of your main function in order to properly disconnect from the database
 
+# Url Handling
+### url_handler.ts
+- Contains the UrlHandler class, which is responsible for processing URLs and fetching data from Github and npm
+
+- Key Features
+    - Url Parsing: Determines if provided URL is a github repository or an npm package. If it is an npm package, fetches the associated Github repository URL from the npm registry
+
+    - Data Fetching: Retrieves repository info such as number of commits in the past year, top 3 contributers and their commits, total number of issues opened and closed in the past year etc.
+
+    - Metrics Storage: Stores all fetched data in a map (commitsMap) for later use in metric calculations
+
+    - Database Interaction: Updates the database entry with the fetched metrics by calling database.updateEntry
+
+- Notes
+    - ensure you have a github personal access token set in your environment variables as GITHUB_TOKEN for API requests. This token should have permissions to read repository data.
+
+    - Be aware of github and npm api rate limits when making requests. Realistically this shouldn't be an issue
+
+    - The checkLicense method clones repositories to a temporary directory to check for license files. Make sure your environment allows for file system operations and cleanup as needed
+
+    - In most cases of an error, the process will exit. This is most likely because the link is not an npm package but instead something else
 # Metric Calculations:
 - Bus Factor:
     - (1 - (commits by top 3 contributors) / total number of commits in the last year)
@@ -51,5 +72,5 @@ Andrew Tu
         - 0.2 - Ramp Up
 
 ### Other Info
-- `sqlite3 atharvaisanidiot.db` in the command line will let you type commands from the command line to see things in the database. Use this as a quick way to test if stuff is working
+- `sqlite3 metrics.db` in the command line will let you type commands from the command line to see things in the database. Use this as a quick way to test if stuff is working
 - Add any functions you want for selecting specific information, or just do it in your own code. s
