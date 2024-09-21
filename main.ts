@@ -114,7 +114,7 @@ manager.registerCommand('test', 'Test suite', () => {
         // Output the results in the format: "X/Y test cases passed. Z% line coverage achieved."
         console.log(`Total: ${totalTests}`);
         console.log(`Passed: ${passedTests}`);
-        console.log(`Coverage: ${lineCoverage.toFixed(0)}`);
+        console.log(`Coverage: ${lineCoverage.toFixed(0)}%`);
         console.log(`${passedTests}/${totalTests} test cases passed. ${lineCoverage.toFixed(0)}% line coverage achieved.`);
     });
 });
