@@ -4,12 +4,20 @@ import { RowInfo } from './calc_metrics';
 import { EventEmitter  } from 'stream';
 import { fstat } from 'fs';
 
+/**
+ * Class representing output metrics functionality.
+ * @extends EventEmitter
+ */
 export class OutputMetrics extends EventEmitter {
     private _db: Database.Database;
     private fileNum: number;
     private fp: number;
-    private loglvl: number
+    private loglvl: number;
 
+    /**
+     * Create an OutputMetrics object.
+     * Given a database, file number, file pointer, and log level, create an OutputMetrics object.
+     */
     constructor(db: Database.Database, fileNum: number, fp: number, loglvl: number) {
         super();
         this._db = db;
@@ -19,6 +27,10 @@ export class OutputMetrics extends EventEmitter {
     }
 
     output_Metrics(index: number): void {
+        /**
+         * Retrieve metrics from the database and output them to stdout.
+         * Input: index - the index of the package to retrieve metrics for
+         */
         try {
             const rows = this._db.prepare('SELECT * FROM package_scores WHERE id = ?').all(index);
     
