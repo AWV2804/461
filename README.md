@@ -3,9 +3,13 @@ Adhvik Kannan
 Noah Kim
 Andrew Tu
 
-# Compiling and Running
-- `tsc <filename>.ts` to compile code into .js
-- `node <filename>.js` to run code
+# Program Purpose
+- The purpose of this program is to provide ACME Corp. with a reliable and safe package analyzer
+# Configuration and Invocation
+- `./run install` to configure the program
+    - log_lvl defaults to 0
+    - program will crash without proper configuration of GitHub Token and Log File in either the .env file or the command line bash EXPORT
+-  `./run ${PATH-TO-DEPENDENCY-FILE}` to invoke the program
 
 # Better-SQLite3
 ### database.ts
